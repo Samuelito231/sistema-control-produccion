@@ -4,28 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Models\ControlCalidad;
 use App\Models\Produccion;
-use App\Models\Producto;  // ← Cambiado de Product a Producto
+use App\Models\Producto;
+use App\Services\CalidadService;
+use App\Http\Requests\CalidadRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ControlCalidadController extends Controller
 {
+    protected $calidadService;
+    
+    public function __construct(CalidadService $calidadService)
+    {
+        $this->calidadService = $calidadService;
+    }
+    
     public function index()
     {
         $inspecciones = ControlCalidad::with(['produccion', 'producto', 'inspector'])
                         ->orderBy('created_at', 'desc')
                         ->paginate(15);
         
-        $stats = [
-            'total' => ControlCalidad::count(),
-            'aprobados' => ControlCalidad::where('resultado', 'aprobado')->count(),
-            'rechazados' => ControlCalidad::where('resultado', 'rechazado')->count(),
-            'cuarentena' => ControlCalidad::where('resultado', 'cuarentena')->count(),
-            'tasa_aprobacion' => 0,
-        ];
+        $stats = $this->calidadService->getEstadisticas();
         
         if ($stats['total'] > 0) {
             $stats['tasa_aprobacion'] = round(($stats['aprobados'] / $stats['total']) * 100, 2);
+        } else {
+            $stats['tasa_aprobacion'] = 0;
         }
         
         return view('control_calidad.index', compact('inspecciones', 'stats'));
@@ -38,48 +42,27 @@ class ControlCalidadController extends Controller
                         ->limit(50)
                         ->get();
         
-        $productos = Producto::orderBy('nombre')->get();  // ← Cambiado de Product a Producto
+        $productos = Producto::orderBy('nombre')->get();
         
         return view('control_calidad.create', compact('producciones', 'productos'));
     }
     
-    public function store(Request $request)
+    public function store(CalidadRequest $request)
     {
-        $validated = $request->validate([
-            'produccion_id' => 'required|exists:producciones,id',
-            'producto_id' => 'required|exists:products,id',  // ← La tabla es 'products'
-            'resultado' => 'required|in:aprobado,rechazado,cuarentena',
-            'motivo_rechazo' => 'required_if:resultado,rechazado|nullable|string|max:500',
-            'observaciones' => 'nullable|string|max:1000',
-        ]);
-        
-        DB::beginTransaction();
-        
         try {
-            $inspeccion = ControlCalidad::create([
-                'produccion_id' => $validated['produccion_id'],
-                'producto_id' => $validated['producto_id'],
-                'fecha_inspeccion' => now(),
-                'resultado' => $validated['resultado'],
-                'motivo_rechazo' => $validated['motivo_rechazo'] ?? null,
-                'observaciones' => $validated['observaciones'],
-                'inspector_id' => auth()->id(),
-            ]);
+            $inspeccion = $this->calidadService->registrarInspeccion($request->validated());
             
-            DB::commit();
-            
-            $mensaje = match($validated['resultado']) {
+            $mensaje = match($request->resultado) {
                 'aprobado' => '✅ Producto aprobado correctamente',
-                'rechazado' => '❌ Producto rechazado por calidad',
-                'cuarentena' => '⚠️ Producto en cuarentena',
-                default => 'Inspección guardada'
+                'rechazado' => '❌ Producto rechazado por calidad. Se ha actualizado el estado de producción.',
+                'cuarentena' => '⚠️ Producto en cuarentena. Requiere revisión adicional.',
+                default => 'Inspección registrada correctamente'
             };
             
             return redirect()->route('control-calidad.index')
                 ->with('success', $mensaje);
                 
         } catch (\Exception $e) {
-            DB::rollback();
             return back()->with('error', 'Error al guardar: ' . $e->getMessage());
         }
     }
