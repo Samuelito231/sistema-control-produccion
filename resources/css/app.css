@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    /* 1. Reset de focos para todos los inputs y selects */
+    input:focus, 
+    select:focus, 
+    textarea:focus, 
+    [type='text']:focus, 
+    [type='email']:focus, 
+    [type='password']:focus {
+        outline: none !important;
+        --tw-ring-offset-shadow: 0 0 #0000;
+        --tw-ring-shadow: 0 0 #0000;
+        box-shadow: 0 0 0 1px #C5A880 !important;
+        border-color: #C5A880 !important;
+    }
+
+    /* 2. Estilo del contenedor Select */
+    select {
+        background-color: #121414 !important;
+        border: 1px solid #333 !important;
+        color: #e2e2e2 !important;
+        /* Quitamos la flecha nativa para mayor control si es necesario */
+        transition: border-color 0.2s ease;
+    }
+
+    /* 3. Corrección del fondo de autocompletado de Chrome */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus,
+    select:-webkit-autofill {
+        -webkit-text-fill-color: #e2e2e2 !important;
+        -webkit-box-shadow: 0 0 0px 1000px #121414 inset !important;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+
+    /* 4. Estilos de placeholder */
+    ::placeholder {
+        color: #555 !important;
+    }
+}
