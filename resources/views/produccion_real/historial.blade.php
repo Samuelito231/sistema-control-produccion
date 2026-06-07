@@ -31,9 +31,9 @@
                     @forelse($producciones as $p)
                     <tr class="hover:bg-white/5 transition-colors group">
                         <td class="px-6 py-4 font-mono text-xs text-gray-300">{{ $p->lote ?? '—' }}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-white">{{ $p->producto->nombre }}</td>
-                        <td class="px-6 py-4 text-right text-green-400 font-semibold">{{ number_format($p->cantidad_producida, 2) }} {{ $p->producto->unidad }}</td>
-                        <td class="px-6 py-4 text-right text-red-400 text-sm">{{ number_format($p->producto_desechado, 2) }} {{ $p->producto->unidad }}</td>
+                        <td class="px-6 py-4 text-sm font-medium text-white">{{ $p->producto->nombre ?? 'Producto eliminado' }}</td>
+                        <td class="px-6 py-4 text-right text-green-400 font-semibold">{{ number_format($p->cantidad_producida, 2) }} {{ $p->producto->unidad ?? 'kg' }}</td>
+                        <td class="px-6 py-4 text-right text-red-400 text-sm">{{ number_format($p->producto_desechado, 2) }} {{ $p->producto->unidad ?? 'kg' }}</td>
                         <td class="px-6 py-4 text-center">
                             @php
                                 $eficienciaColor = $p->eficiencia >= 90 ? 'bg-green-500/20 text-green-300' : ($p->eficiencia >= 70 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300');
@@ -65,7 +65,7 @@
                 </tbody>
             </table>
         </div>
-        
+
         @if($producciones->hasPages())
         <div class="px-6 py-4 border-t border-white/10 bg-white/5">
             {{ $producciones->links() }}

@@ -1,9 +1,11 @@
+```blade
 @php use SimpleSoftwareIO\QrCode\Facades\QrCode; @endphp
 
 @extends('components.panel')
 
 @section('content')
 <div class="p-8 space-y-8">
+
     <!-- Métricas rápidas -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-5">
@@ -22,7 +24,7 @@
         </div>
         <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-5">
             <div class="flex justify-between items-start">
-                <p class="text-gray-400 text-sm font-medium uppercase tracking-wide">Productos en stock crítico</p>
+                <p class="text-gray-400 text-sm font-medium uppercase tracking-wide">Stock crítico</p>
                 <span class="material-symbols-outlined text-2xl text-red-400">warning</span>
             </div>
             <p class="text-3xl font-bold text-white mt-2">{{ $productos->filter(fn($p) => $p->stock_actual <= $p->stock_minimo)->count() }}</p>
@@ -36,7 +38,7 @@
         </div>
     </div>
 
-    <!-- Filtros y búsqueda (solo categorías de productos terminados) -->
+    <!-- Filtros y búsqueda -->
     <form method="GET" action="{{ route('inventario') }}" class="space-y-4">
         <div class="flex flex-wrap gap-2">
             <button name="categoria" value="Todos" class="chip px-4 py-1.5 rounded-full text-xs {{ request('categoria') == 'Todos' || !request('categoria') ? 'bg-[#e7c095] text-black' : 'bg-white/5 border border-white/20 text-gray-300' }}">Todos</button>
@@ -74,7 +76,7 @@
                         <th class="px-6 py-4 text-center">Estado</th>
                         <th class="px-6 py-4 text-center">Código QR</th>
                         <th class="px-6 py-4 text-right">Acciones</th>
-                    <tr>
+                    </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
                     @forelse($productos as $producto)
@@ -88,7 +90,7 @@
                             <span class="@if($producto->stock_actual <= $producto->stock_minimo) text-red-400 @else text-white @endif font-bold">
                                 {{ rtrim(rtrim($producto->stock_actual, '0'), '.') }}
                             </span>
-                            <span class="text-[11px] text-gray-500 ml-1">({{ round(($producto->stock_actual / max($producto->stock_minimo,1)) * 100) }}%)</span>
+                            <span class="text-[11px] text-gray-500 ml-1">({{ round(($producto->stock_actual / max($producto->stock_minimo, 1)) * 100) }}%)</span>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-300">{{ $producto->unidad ?? 'kg' }}</td>
                         <td class="px-6 py-4 text-center">
@@ -96,7 +98,6 @@
                                 {{ $producto->stock_actual <= $producto->stock_minimo ? 'Crítico' : 'Normal' }}
                             </span>
                         </td>
-                        <!-- QR - solo visible para admin y operario -->
                         <td class="px-6 py-4 text-center">
                             @if(in_array(auth()->user()->role, ['admin', 'operario']))
                                 <a href="{{ route('produccion.rapida', $producto->id) }}" target="_blank" class="inline-block" title="Escanear QR para registrar merma rápida">
@@ -106,7 +107,6 @@
                                 <span class="text-gray-500 text-xs">—</span>
                             @endif
                         </td>
-                        <!-- Acciones -->
                         <td class="px-6 py-4 text-right">
                             @if(auth()->user()->role === 'admin')
                                 <a href="{{ route('productos.edit', $producto->id) }}" class="p-1.5 rounded-lg hover:bg-white/10 inline-block" title="Editar producto">
@@ -117,7 +117,7 @@
                                 <span class="material-symbols-outlined text-sm">visibility</span>
                             </a>
                             @if(auth()->user()->role === 'admin')
-                                <a href="{{ route('recetas.index', $producto->id) }}" class="p-1.5 rounded-lg hover:bg-white/10 inline-block" title="Receta (materias primas necesarias)">
+                                <a href="{{ route('recetas.index', $producto->id) }}" class="p-1.5 rounded-lg hover:bg-white/10 inline-block" title="Receta">
                                     <span class="material-symbols-outlined text-sm">receipt</span>
                                 </a>
                                 <form action="{{ route('productos.destroy', $producto->id) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Eliminar este producto? Se conservarán sus mermas para el historial.');">
@@ -144,5 +144,7 @@
             <span>Mostrando {{ $productos->firstItem() ?? 0 }} - {{ $productos->lastItem() ?? 0 }} de {{ $productos->total() }} productos</span>
         </div>
     </div>
+
 </div>
 @endsection
+```

@@ -11,7 +11,7 @@ class Producto extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'products';
+    protected $table = 'productos';
 
     protected $fillable = [
         'sku', 'nombre', 'categoria', 'stock_actual', 'unidad',

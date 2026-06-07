@@ -29,8 +29,8 @@ class ProduccionController extends Controller
             ->where('fecha', '>=', now()->subDays(7))
             ->count();
         $costoMerma = Merma::where('tipo_merma', 'produccion')
-            ->join('products', 'mermas.producto_id', '=', 'products.id')
-            ->selectRaw('SUM(mermas.cantidad * COALESCE(products.precio_unitario, 0)) as total')
+            ->join('productos', 'mermas.producto_id', '=', 'productos.id')
+            ->selectRaw('SUM(mermas.cantidad * COALESCE(productos.precio_unitario, 0)) as total')
             ->first()->total ?? 0;
         $mermaPorProducto = Merma::where('tipo_merma', 'produccion')
             ->where('fecha', '>=', now()->subDays(7))
@@ -72,7 +72,7 @@ class ProduccionController extends Controller
     public function storeMerma(Request $request)
     {
         $request->validate([
-            'producto_id' => 'required|exists:products,id',
+            'producto_id' => 'required|exists:productos,id',
             'cantidad' => 'required|numeric|min:0.01',
             'causa' => 'required|string',
             'lote' => 'nullable|string',

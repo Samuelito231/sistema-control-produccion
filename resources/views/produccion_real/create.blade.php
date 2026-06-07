@@ -21,8 +21,9 @@
                     <select name="producto_id" id="producto_id" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e7c095] outline-none">
                         <option value="">Seleccione un producto</option>
                         @foreach($productos as $prod)
-                            <option value="{{ $prod->id }}" data-receta="{{ $prod->recetas->isNotEmpty() ? '1' : '0' }}"
-                                    data-receta-detalle="{{ json_encode($prod->recetas->map(fn($r) => ['nombre' => $r->materiaPrima->nombre, 'cantidad' => $r->cantidad_necesaria])) }}">
+                            <option value="{{ $prod->id }}" 
+                                    data-receta="{{ $prod->recetas->isNotEmpty() ? '1' : '0' }}"
+                                    data-receta-detalle="{{ json_encode($prod->recetas->map(fn($r) => ['nombre' => $r->materiaPrima->nombre ?? 'MP eliminada', 'cantidad' => $r->cantidad_necesaria])) }}">
                                 {{ $prod->nombre }} (SKU: {{ $prod->sku }})
                             </option>
                         @endforeach
@@ -105,8 +106,7 @@
         const total = elaborado + desechado;
         const eficiencia = total > 0 ? (elaborado / total) * 100 : 0;
         eficienciaSpan.textContent = eficiencia.toFixed(1);
-        
-        // Calcular MP consumida teórica
+
         if (recetaData.recetas && elaborado > 0) {
             let totalMp = 0;
             recetaData.recetas.forEach(r => {
@@ -120,21 +120,21 @@
         const selectedOption = this.options[this.selectedIndex];
         const tieneReceta = selectedOption.getAttribute('data-receta') === '1';
         const recetaJson = selectedOption.getAttribute('data-receta-detalle');
-        
+
         if (!tieneReceta) {
             sinRecetaMsg.classList.remove('hidden');
             recetaDetalle.innerHTML = '<p class="text-red-400 text-sm">⚠️ Este producto no tiene receta definida</p>';
             recetaData = {};
             return;
         }
-        
+
         sinRecetaMsg.classList.add('hidden');
-        
+
         if (recetaJson) {
             try {
                 const recetas = JSON.parse(recetaJson);
                 recetaData = { producto_id: selectedOption.value, recetas: recetas };
-                
+
                 let html = '<table class="w-full text-sm"><thead><tr class="text-left border-b border-white/10"><th class="py-2">Insumo</th><th class="py-2">Cant./u</th></tr></thead><tbody>';
                 recetas.forEach(r => {
                     html += `<tr class="border-b border-white/5"><td class="py-2 text-white">${r.nombre}</td><td class="py-2">${r.cantidad}</td></tr>`;
@@ -147,7 +147,7 @@
             }
         }
     });
-    
+
     cantidadProducida.addEventListener('input', calcularEficiencia);
     productoDesechado.addEventListener('input', calcularEficiencia);
 </script>

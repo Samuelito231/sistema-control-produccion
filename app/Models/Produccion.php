@@ -9,7 +9,7 @@ class Produccion extends Model
 {
     use HasFactory;
 
-    protected $table = 'producciones';  // ← IMPORTANTE: debe coincidir con el nombre de la tabla en BD
+    protected $table = 'producciones';
 
     protected $fillable = [
         'lote',
@@ -42,5 +42,15 @@ class Produccion extends Model
     public function consumos()
     {
         return $this->hasMany(ConsumoMateriaPrima::class);
+    }
+
+    public function controlesCalidad()
+    {
+        return $this->hasMany(ControlCalidad::class, 'produccion_id');
+    }
+
+    public function mermas()
+    {
+        return $this->hasMany(Merma::class, 'produccion_id');
     }
 }

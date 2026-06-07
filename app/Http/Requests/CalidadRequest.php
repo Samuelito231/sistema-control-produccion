@@ -16,7 +16,7 @@ class CalidadRequest extends FormRequest
     {
         return [
             'produccion_id' => 'required|exists:producciones,id',
-            'producto_id' => 'required|exists:products,id',
+            'producto_id' => 'required|exists:productos,id',
             'resultado' => 'required|in:aprobado,rechazado,cuarentena',
             'motivo_rechazo' => 'required_if:resultado,rechazado|nullable|string|max:500',
             'observaciones' => 'nullable|string|max:1000',

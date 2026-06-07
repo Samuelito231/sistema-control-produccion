@@ -29,7 +29,7 @@ class ProduccionRealController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'producto_id' => 'required|exists:products,id',
+            'producto_id' => 'required|exists:productos,id',
             'cantidad_producida' => 'required|numeric|min:0',      // ELABORADO
             'producto_desechado' => 'nullable|numeric|min:0',       // DESECHADO
             'materia_prima_desechada' => 'nullable|numeric|min:0',  // MP desechada

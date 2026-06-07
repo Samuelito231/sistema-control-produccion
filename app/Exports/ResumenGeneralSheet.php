@@ -24,8 +24,8 @@ class ResumenGeneralSheet implements FromArray, WithTitle, WithEvents
     {
         $totalMerma = \App\Models\Merma::whereBetween('fecha', [$this->from, $this->to])->sum('cantidad');
         $costoMerma = \App\Models\Merma::whereBetween('fecha', [$this->from, $this->to])
-            ->join('products', 'mermas.producto_id', '=', 'products.id')
-            ->sum(\DB::raw('mermas.cantidad * products.precio_unitario'));
+            ->join('productos', 'mermas.producto_id', '=', 'productos.id')
+            ->sum(\DB::raw('mermas.cantidad * productos.precio_unitario'));
         $totalProductos = \App\Models\Producto::count();
         $productosActivos = \App\Models\Producto::whereNull('deleted_at')->count();
         $productosEliminados = \App\Models\Producto::onlyTrashed()->count();

@@ -33,34 +33,39 @@
             </div>
         </div>
 
-        <!-- ==================== PRODUCCIÓN ==================== -->
-        @if(in_array(Auth::user()->role, ['admin', 'operario']))
-        <div class="relative">
-            <input type="checkbox" id="produccionDropdown" class="hidden peer">
-            <label for="produccionDropdown" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer
-                          {{ request()->routeIs('produccion_real*') || request()->routeIs('produccion*') || request()->routeIs('control-calidad*') ? 'bg-[#e7c095]/10 border border-[#e7c095]/30' : 'hover:bg-white/5 border border-transparent hover:border-white/10' }}">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-2xl">factory</span>
-                    <span class="font-medium text-sm">Producción</span>
-                </div>
-                <span class="material-symbols-outlined text-gray-400 text-base transition-transform peer-checked:rotate-180">expand_more</span>
-            </label>
-            <div class="hidden peer-checked:block pl-8 space-y-1 mt-1">
-                <a href="{{ route('produccion_real.create') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('produccion_real.create') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                    <span class="material-symbols-outlined text-sm">add</span> Registrar Producción
-                </a>
-                <a href="{{ route('produccion_real.historial') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('produccion_real.historial') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                    <span class="material-symbols-outlined text-sm">history</span> Historial de Producción
-                </a>
-                <a href="{{ route('produccion') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('produccion') && !request()->routeIs('produccion_real*') && !request()->routeIs('control-calidad*') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                    <span class="material-symbols-outlined text-sm">delete_sweep</span> Merma en Producción
-                </a>
-                <a href="{{ route('control-calidad.index') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('control-calidad*') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                    <span class="material-symbols-outlined text-sm">science</span> Control de Calidad
-                </a>
-            </div>
+       <!-- ==================== PRODUCCIÓN ==================== -->
+@if(in_array(Auth::user()->role, ['admin', 'operario', 'auditor', 'analista']))
+<div class="relative">
+    <input type="checkbox" id="produccionDropdown" class="hidden peer">
+    <label for="produccionDropdown" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer
+                  {{ request()->routeIs('produccion_real*') || request()->routeIs('produccion*') || request()->routeIs('control-calidad*') ? 'bg-[#e7c095]/10 border border-[#e7c095]/30' : 'hover:bg-white/5 border border-transparent hover:border-white/10' }}">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-2xl">factory</span>
+            <span class="font-medium text-sm">Producción</span>
         </div>
+        <span class="material-symbols-outlined text-gray-400 text-base transition-transform peer-checked:rotate-180">expand_more</span>
+    </label>
+    <div class="hidden peer-checked:block pl-8 space-y-1 mt-1">
+
+        @if(in_array(Auth::user()->role, ['admin', 'operario']))
+        <a href="{{ route('produccion_real.create') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('produccion_real.create') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+            <span class="material-symbols-outlined text-sm">add</span> Registrar Producción
+        </a>
+        <a href="{{ route('produccion_real.historial') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('produccion_real.historial') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+            <span class="material-symbols-outlined text-sm">history</span> Historial de Producción
+        </a>
+        <a href="{{ route('produccion') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('produccion') && !request()->routeIs('produccion_real*') && !request()->routeIs('control-calidad*') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+            <span class="material-symbols-outlined text-sm">delete_sweep</span> Merma en Producción
+        </a>
         @endif
+
+        <a href="{{ route('control-calidad.index') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('control-calidad*') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+            <span class="material-symbols-outlined text-sm">science</span> Control de Calidad
+        </a>
+
+    </div>
+</div>
+@endif
 
         <!-- ==================== EMPAQUETADO ==================== -->
         @if(in_array(Auth::user()->role, ['admin', 'operario']))

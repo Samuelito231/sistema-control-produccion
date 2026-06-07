@@ -25,11 +25,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 @php
                     $info = [
-                        ['label' => 'Producción', 'value' => '#' . $controlCalidad->produccion_id],
-                        ['label' => 'Producto', 'value' => $controlCalidad->producto->nombre ?? 'N/A'],
-                        ['label' => 'Inspector', 'value' => $controlCalidad->inspector->name ?? 'N/A'],
-                        ['label' => 'Fecha de Inspección', 'value' => $controlCalidad->fecha_inspeccion->format('d/m/Y H:i')],
-                        ['label' => 'Creado el', 'value' => $controlCalidad->created_at->format('d/m/Y H:i')],
+                        ['label' => 'Producción',         'value' => '#' . $controlCalidad->produccion_id],
+                        ['label' => 'Producto',           'value' => $controlCalidad->producto->nombre ?? 'N/A'],
+                        ['label' => 'Inspector',          'value' => $controlCalidad->inspector->name ?? 'N/A'],
+                        ['label' => 'Fecha de Inspección','value' => $controlCalidad->fecha_inspeccion->format('d/m/Y')],
+                        ['label' => 'Creado el',          'value' => $controlCalidad->created_at->format('d/m/Y H:i')],
                     ];
                 @endphp
 

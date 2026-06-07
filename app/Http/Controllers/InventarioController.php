@@ -46,7 +46,7 @@ class InventarioController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'sku' => 'required|unique:products,sku',
+            'sku' => 'required|unique:productos,sku',
             'nombre' => 'required|string|max:255',
             'categoria' => 'required|string',
             'stock_actual' => 'required|numeric|min:0',
@@ -78,7 +78,7 @@ class InventarioController extends Controller
     public function update(Request $request, Producto $producto)
     {
         $request->validate([
-            'sku' => 'required|unique:products,sku,' . $producto->id,
+            'sku' => 'required|unique:productos,sku,' . $producto->id,
             'nombre' => 'required|string|max:255',
             'categoria' => 'required|string',
             'stock_actual' => 'required|numeric|min:0',
