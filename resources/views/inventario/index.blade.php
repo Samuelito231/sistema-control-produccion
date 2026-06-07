@@ -1,150 +1,106 @@
-```blade
 @php use SimpleSoftwareIO\QrCode\Facades\QrCode; @endphp
 
 @extends('components.panel')
 
 @section('content')
-<div class="p-8 space-y-8">
+<div class="p-8 max-w-7xl mx-auto space-y-8">
 
-    <!-- Métricas rápidas -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-5">
-            <div class="flex justify-between items-start">
-                <p class="text-gray-400 text-sm font-medium uppercase tracking-wide">Total productos</p>
-                <span class="material-symbols-outlined text-2xl text-[#e7c095]">inventory</span>
-            </div>
-            <p class="text-3xl font-bold text-white mt-2">{{ $productos->total() }}</p>
-        </div>
-        <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-5">
-            <div class="flex justify-between items-start">
-                <p class="text-gray-400 text-sm font-medium uppercase tracking-wide">Stock total</p>
-                <span class="material-symbols-outlined text-2xl text-[#e7c095]">box</span>
-            </div>
-            <p class="text-3xl font-bold text-white mt-2">{{ rtrim(rtrim($stockTotal, '0'), '.') }} kg/uds</p>
-        </div>
-        <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-5">
-            <div class="flex justify-between items-start">
-                <p class="text-gray-400 text-sm font-medium uppercase tracking-wide">Stock crítico</p>
-                <span class="material-symbols-outlined text-2xl text-red-400">warning</span>
-            </div>
-            <p class="text-3xl font-bold text-white mt-2">{{ $productos->filter(fn($p) => $p->stock_actual <= $p->stock_minimo)->count() }}</p>
-        </div>
-        <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-5">
-            <div class="flex justify-between items-start">
-                <p class="text-gray-400 text-sm font-medium uppercase tracking-wide">Valor inventario</p>
-                <span class="material-symbols-outlined text-2xl text-[#e7c095]">payments</span>
-            </div>
-            <p class="text-3xl font-bold text-white mt-2">${{ rtrim(rtrim($valorTotal, '0'), '.') }}</p>
-        </div>
+    <div class="flex justify-between items-end">
+        <h1 class="text-3xl font-black text-white tracking-tighter">Control de Inventario</h1>
+        @if(auth()->user()->role === 'admin')
+            <a href="{{ route('productos.create') }}" class="bg-[#e7c095] text-black font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-[#e7c095]/20 hover:scale-[1.02] transition-transform flex items-center gap-2">
+                <span class="material-symbols-outlined">add</span> Nuevo Producto
+            </a>
+        @endif
     </div>
 
-    <!-- Filtros y búsqueda -->
-    <form method="GET" action="{{ route('inventario') }}" class="space-y-4">
-        <div class="flex flex-wrap gap-2">
-            <button name="categoria" value="Todos" class="chip px-4 py-1.5 rounded-full text-xs {{ request('categoria') == 'Todos' || !request('categoria') ? 'bg-[#e7c095] text-black' : 'bg-white/5 border border-white/20 text-gray-300' }}">Todos</button>
-            <button name="categoria" value="Snacks naturales" class="chip px-4 py-1.5 rounded-full text-xs {{ request('categoria') == 'Snacks naturales' ? 'bg-[#e7c095] text-black' : 'bg-white/5 border border-white/20 text-gray-300' }}">Snacks naturales</button>
-            <button name="categoria" value="Galletas horneadas" class="chip px-4 py-1.5 rounded-full text-xs {{ request('categoria') == 'Galletas horneadas' ? 'bg-[#e7c095] text-black' : 'bg-white/5 border border-white/20 text-gray-300' }}">Galletas horneadas</button>
-            <button name="categoria" value="Juguetes comestibles" class="chip px-4 py-1.5 rounded-full text-xs {{ request('categoria') == 'Juguetes comestibles' ? 'bg-[#e7c095] text-black' : 'bg-white/5 border border-white/20 text-gray-300' }}">Juguetes comestibles</button>
-        </div>
-        <div class="flex flex-wrap gap-4 items-center justify-between">
-            <div class="relative flex-1 max-w-md">
-                <input type="text" name="search" placeholder="Buscar por nombre o SKU..." value="{{ request('search') }}"
-                       class="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-12 pr-4 text-white">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        @php
+            $kpis = [
+                ['label' => 'Total Productos', 'value' => $productos->total(), 'icon' => 'inventory', 'color' => 'text-[#e7c095]'],
+                ['label' => 'Stock Total', 'value' => rtrim(rtrim($stockTotal, '0'), '.'), 'icon' => 'box', 'color' => 'text-white'],
+                ['label' => 'Stock Crítico', 'value' => $productos->filter(fn($p) => $p->stock_actual <= $p->stock_minimo)->count(), 'icon' => 'warning', 'color' => 'text-red-400'],
+                ['label' => 'Valor Inventario', 'value' => '$' . number_format($valorTotal, 2), 'icon' => 'payments', 'color' => 'text-green-400']
+            ];
+        @endphp
+        @foreach($kpis as $kpi)
+        <div class="bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl p-6">
+            <div class="flex justify-between items-start mb-2">
+                <p class="text-[10px] font-bold uppercase text-gray-500 tracking-widest">{{ $kpi['label'] }}</p>
+                <span class="material-symbols-outlined {{ $kpi['color'] }}">{{ $kpi['icon'] }}</span>
             </div>
-            <div class="flex gap-2">
-                <button type="submit" class="bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 px-5 rounded-full">Filtrar</button>
-                <a href="{{ route('inventario') }}" class="bg-white/5 hover:bg-white/10 text-gray-300 font-bold py-2.5 px-5 rounded-full">Limpiar</a>
-            </div>
-            @if(auth()->user()->role === 'admin')
-                <a href="{{ route('productos.create') }}" class="bg-gradient-to-r from-[#e7c095] to-[#c29e75] text-black font-bold py-2.5 px-6 rounded-full shadow-lg flex items-center gap-2">
-                    <span class="material-symbols-outlined">add</span> Nuevo producto
-                </a>
-            @endif
+            <p class="text-3xl font-black text-white">{{ $kpi['value'] }}</p>
         </div>
+        @endforeach
+    </div>
+
+    <form method="GET" action="{{ route('inventario') }}" class="bg-black/20 p-4 rounded-2xl border border-white/5 flex flex-wrap gap-4 items-center">
+        <div class="flex-1 min-w-[200px]">
+            <input type="text" name="search" placeholder="Buscar por nombre o SKU..." value="{{ request('search') }}"
+                   class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder:text-gray-600 focus:border-[#e7c095] outline-none transition">
+        </div>
+        <select name="categoria" class="bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none">
+            <option value="">Todas las categorías</option>
+            <option value="Snacks naturales" {{ request('categoria') == 'Snacks naturales' ? 'selected' : '' }}>Snacks naturales</option>
+            <option value="Galletas horneadas" {{ request('categoria') == 'Galletas horneadas' ? 'selected' : '' }}>Galletas horneadas</option>
+        </select>
+        <button type="submit" class="bg-white/10 text-white font-bold py-3 px-6 rounded-xl hover:bg-white/20 transition">Filtrar</button>
+        <a href="{{ route('inventario') }}" class="text-gray-500 hover:text-white transition px-4">Limpiar</a>
     </form>
 
-    <!-- Tabla de productos -->
-    <div class="bg-black/30 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead class="bg-white/5 text-gray-300 text-xs font-semibold uppercase tracking-wider border-b-2 border-[#e7c095]/30">
-                    <tr>
-                        <th class="px-6 py-4">Producto</th>
-                        <th class="px-6 py-4">Categoría</th>
-                        <th class="px-6 py-4 text-center">Stock</th>
-                        <th class="px-6 py-4">Unidad</th>
-                        <th class="px-6 py-4 text-center">Estado</th>
-                        <th class="px-6 py-4 text-center">Código QR</th>
-                        <th class="px-6 py-4 text-right">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                    @forelse($productos as $producto)
-                    <tr class="hover:bg-white/5 transition">
-                        <td class="px-6 py-4">
-                            <div class="font-semibold text-white">{{ $producto->nombre }}</div>
-                            <div class="text-[11px] text-gray-500">SKU: {{ $producto->sku }}</div>
-                        </td>
-                        <td class="px-6 py-4 text-gray-300">{{ $producto->categoria }}</td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="@if($producto->stock_actual <= $producto->stock_minimo) text-red-400 @else text-white @endif font-bold">
-                                {{ rtrim(rtrim($producto->stock_actual, '0'), '.') }}
+    <div class="bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-white/5 text-[10px] uppercase tracking-widest text-gray-400">
+                <tr>
+                    <th class="px-6 py-4">Producto</th>
+                    <th class="px-6 py-4">Stock</th>
+                    <th class="px-6 py-4 text-center">Estado</th>
+                    <th class="px-6 py-4 text-center">QR</th>
+                    <th class="px-6 py-4 text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+                @forelse($productos as $producto)
+                <tr class="hover:bg-white/5 transition-colors group">
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-white">{{ $producto->nombre }}</p>
+                        <p class="text-xs text-gray-500 font-mono">{{ $producto->sku }}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-lg {{ $producto->stock_actual <= $producto->stock_minimo ? 'text-red-400' : 'text-white' }}">
+                                {{ (float)$producto->stock_actual }}
                             </span>
-                            <span class="text-[11px] text-gray-500 ml-1">({{ round(($producto->stock_actual / max($producto->stock_minimo, 1)) * 100) }}%)</span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-300">{{ $producto->unidad ?? 'kg' }}</td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="text-xs @if($producto->stock_actual <= $producto->stock_minimo) bg-red-500/20 text-red-300 @else bg-green-500/20 text-green-300 @endif px-2 py-1 rounded-full">
-                                {{ $producto->stock_actual <= $producto->stock_minimo ? 'Crítico' : 'Normal' }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            @if(in_array(auth()->user()->role, ['admin', 'operario']))
-                                <a href="{{ route('produccion.rapida', $producto->id) }}" target="_blank" class="inline-block" title="Escanear QR para registrar merma rápida">
-                                    {!! QrCode::size(48)->generate(route('produccion.rapida', $producto->id)) !!}
-                                </a>
-                            @else
-                                <span class="text-gray-500 text-xs">—</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            @if(auth()->user()->role === 'admin')
-                                <a href="{{ route('productos.edit', $producto->id) }}" class="p-1.5 rounded-lg hover:bg-white/10 inline-block" title="Editar producto">
-                                    <span class="material-symbols-outlined text-sm">edit</span>
-                                </a>
-                            @endif
-                            <a href="{{ route('productos.mermas', $producto->id) }}" class="p-1.5 rounded-lg hover:bg-white/10 inline-block" title="Historial de mermas">
-                                <span class="material-symbols-outlined text-sm">visibility</span>
-                            </a>
-                            @if(auth()->user()->role === 'admin')
-                                <a href="{{ route('recetas.index', $producto->id) }}" class="p-1.5 rounded-lg hover:bg-white/10 inline-block" title="Receta">
-                                    <span class="material-symbols-outlined text-sm">receipt</span>
-                                </a>
-                                <form action="{{ route('productos.destroy', $producto->id) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Eliminar este producto? Se conservarán sus mermas para el historial.');">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="p-1.5 rounded-lg hover:bg-white/10 hover:text-red-400 transition" title="Eliminar producto">
-                                        <span class="material-symbols-outlined text-sm">delete</span>
-                                    </button>
-                                </form>
-                            @endif
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="px-6 py-10 text-center text-gray-400">
-                            No hay productos terminados registrados.<br>
-                            <span class="text-xs">Usa el botón "Nuevo producto" para agregar el primer producto.</span>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="px-6 py-3 border-t border-white/10 flex justify-between text-xs text-gray-400">
-            <span>Mostrando {{ $productos->firstItem() ?? 0 }} - {{ $productos->lastItem() ?? 0 }} de {{ $productos->total() }} productos</span>
-        </div>
+                            <div class="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                @php $pct = min(100, ($producto->stock_actual / max($producto->stock_minimo, 1)) * 100); @endphp
+                                <div class="h-full {{ $pct < 50 ? 'bg-red-500' : 'bg-green-500' }}" style="width: {{ $pct }}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="text-[10px] px-2 py-1 rounded-full border {{ $producto->stock_actual <= $producto->stock_minimo ? 'border-red-500/30 text-red-400' : 'border-green-500/30 text-green-400' }}">
+                            {{ $producto->stock_actual <= $producto->stock_minimo ? 'CRÍTICO' : 'NORMAL' }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        @if(in_array(auth()->user()->role, ['admin', 'operario']))
+                            <div class="opacity-60 group-hover:opacity-100 transition-opacity">
+                                {!! QrCode::size(40)->color(255,255,255)->backgroundColor(0,0,0,0)->generate(route('produccion.rapida', $producto->id)) !!}
+                            </div>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <a href="{{ route('productos.mermas', $producto->id) }}" class="text-gray-400 hover:text-[#e7c095]"><span class="material-symbols-outlined text-sm">visibility</span></a>
+                        @if(auth()->user()->role === 'admin')
+                            <a href="{{ route('productos.edit', $producto->id) }}" class="text-gray-400 hover:text-white"><span class="material-symbols-outlined text-sm">edit</span></a>
+                        @endif
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="5" class="p-10 text-center text-gray-500">No hay productos.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
-
 </div>
 @endsection
-```
