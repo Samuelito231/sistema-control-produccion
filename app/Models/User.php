@@ -11,11 +11,6 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -26,48 +21,64 @@ class User extends Authenticatable
         'rejection_reason',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'approved_at' => 'datetime',
     ];
 
-    // Relación con el usuario que aprobó/rechazó esta cuenta
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    // Scope para usuarios pendientes
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
     }
 
-    // Scope para usuarios activos
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
     }
 
-    // Scope para usuarios suspendidos
     public function scopeSuspended($query)
     {
         return $query->where('status', 'suspended');
+    }
+
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isOperario(): bool
+    {
+        return $this->role === 'operario';
+    }
+
+    public function isAuditor(): bool
+    {
+        return $this->role === 'auditor';
+    }
+
+    public function isAnalista(): bool
+    {
+        return $this->role === 'analista';
+    }
+
+    public function isEmpaquetador(): bool
+    {
+        return $this->role === 'empaquetador';
     }
 }

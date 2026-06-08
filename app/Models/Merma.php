@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Merma extends Model
 {
+
+use HasFactory, SoftDeletes;
+
     use HasFactory;
 
     protected $table = 'mermas';
@@ -24,8 +28,11 @@ class Merma extends Model
         'observaciones'
     ];
 
-    protected $casts = [
+     protected $casts = [
+        'cantidad' => 'decimal:2',
         'fecha' => 'date',
+        'deleted_at' => 'datetime', 
+
     ];
 
     public function producto()

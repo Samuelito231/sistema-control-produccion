@@ -14,12 +14,13 @@ class MovimientoMateriaPrima extends Model
     protected $fillable = [
         'materia_prima_id', 'tipo', 'cantidad', 'motivo',
         'referencia_tipo', 'referencia_id', 'costo_unitario_momento',
-        'observaciones', 'usuario_id'
+        'observaciones', 'usuario_id', 'fecha_movimiento'  // ← Agrega esta línea
     ];
 
     protected $casts = [
         'cantidad' => 'decimal:4',
         'costo_unitario_momento' => 'decimal:4',
+        'fecha_movimiento' => 'datetime',  // ← Agrega esta línea
     ];
 
     public function materiaPrima()
