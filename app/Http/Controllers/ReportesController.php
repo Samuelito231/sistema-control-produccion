@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Merma;
 use App\Models\Producto;
 use App\Models\User;
+use App\Helpers\NotificacionHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\ReporteCompletoExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
 
 class ReportesController extends Controller
 {
@@ -21,6 +23,26 @@ class ReportesController extends Controller
             ->when($request->causa,       fn($q) => $q->where('causa', $request->causa))
             ->when($request->tipo_merma,  fn($q) => $q->where('tipo_merma', $request->tipo_merma))
             ->when($request->usuario_id,  fn($q) => $q->where('usuario_id', $request->usuario_id));
+    }
+
+    // ─── Validar fechas ────────────────────────────────────────────────────────
+    private function validarFechas(Request $request): array
+    {
+        $from = $request->get('from');
+        $to = $request->get('to');
+        
+        // Validar formato de fechas
+        if ($from && !strtotime($from)) {
+            $from = now()->startOfMonth()->toDateString();
+        }
+        if ($to && !strtotime($to)) {
+            $to = now()->toDateString();
+        }
+        
+        return [
+            'from' => $from ?: now()->startOfMonth()->toDateString(),
+            'to' => $to ?: now()->toDateString(),
+        ];
     }
 
     // ─── Estadísticas del período ──────────────────────────────────────────────
@@ -36,19 +58,22 @@ class ReportesController extends Controller
             ->selectRaw('SUM(mermas.cantidad * COALESCE(productos.precio_unitario, 0)) as total')
             ->first()->total ?? 0;
 
-        $produccionEsperada = 50000;
-        $eficiencia = $produccionEsperada > 0
-            ? max(0, min(100, round((1 - ($totalMerma / $produccionEsperada)) * 100, 2)))
+        // Calcular eficiencia basada en datos reales
+        $produccionTotal = (clone $base)->where('tipo_merma', 'produccion')->sum('cantidad');
+        $produccionEstimada = max(50000, $produccionTotal * 10); // Estimación dinámica
+        $eficiencia = $produccionEstimada > 0
+            ? max(0, min(100, round((1 - ($totalMerma / $produccionEstimada)) * 100, 2)))
             : 98.5;
 
         return compact('totalMerma', 'movimientosMes', 'lotesCerrados', 'costoMerma', 'eficiencia');
     }
 
     // ─── Variaciones respecto al mes anterior ─────────────────────────────────
-    private function getVariaciones(array $actual): array
+    private function getVariaciones(array $actual, string $from): array
     {
-        $lastStart = now()->subMonth()->startOfMonth()->toDateString();
-        $lastEnd   = now()->subMonth()->endOfMonth()->toDateString();
+        $fechaActual = Carbon::parse($from);
+        $lastStart = $fechaActual->copy()->subMonth()->startOfMonth()->toDateString();
+        $lastEnd   = $fechaActual->copy()->subMonth()->endOfMonth()->toDateString();
 
         $movimientosLastMonth = Merma::whereBetween('fecha', [$lastStart, $lastEnd])->count();
         $mermaLastMonth       = Merma::whereBetween('fecha', [$lastStart, $lastEnd])->sum('cantidad');
@@ -99,7 +124,7 @@ class ReportesController extends Controller
             ->get()
             ->keyBy('tipo_merma');
 
-        $mermaPorDia = Merma::whereBetween('fecha', [now()->subDays(30), now()])
+        $mermaPorDia = Merma::whereBetween('fecha', [Carbon::now()->subDays(30), Carbon::now()])
             ->select(DB::raw('fecha'), DB::raw('SUM(cantidad) as total'))
             ->groupBy('fecha')
             ->orderBy('fecha')
@@ -117,11 +142,12 @@ class ReportesController extends Controller
     // ─── INDEX ─────────────────────────────────────────────────────────────────
     public function index(Request $request)
     {
-        $from = $request->get('from', now()->startOfMonth()->toDateString());
-        $to   = $request->get('to', now()->toDateString());
+        $fechas = $this->validarFechas($request);
+        $from = $fechas['from'];
+        $to = $fechas['to'];
 
         $stats      = $this->getEstadisticasPeriodo($from, $to, $request);
-        $variaciones = $this->getVariaciones($stats);
+        $variaciones = $this->getVariaciones($stats, $from);
         $graficas   = $this->getDatosGraficas($from, $to, $request);
 
         $mermasRecientes = $this->mermasQuery($from, $to, $request)
@@ -158,8 +184,9 @@ class ReportesController extends Controller
     // ─── EXPORT PDF ────────────────────────────────────────────────────────────
     public function exportPdf(Request $request)
     {
-        $from = $request->get('from', now()->startOfMonth()->toDateString());
-        $to   = $request->get('to', now()->toDateString());
+        $fechas = $this->validarFechas($request);
+        $from = $fechas['from'];
+        $to = $fechas['to'];
 
         $mermas = Merma::whereBetween('fecha', [$from, $to])
             ->with(['producto' => fn($q) => $q->withTrashed(), 'usuario'])
@@ -172,10 +199,13 @@ class ReportesController extends Controller
             ->join('productos', 'mermas.producto_id', '=', 'productos.id')
             ->sum(DB::raw('mermas.cantidad * productos.precio_unitario'));
 
-        $produccionEsperada = 50000;
+        $produccionTotal = Merma::whereBetween('fecha', [$from, $to])
+            ->where('tipo_merma', 'produccion')
+            ->sum('cantidad');
+        $produccionEstimada = max(50000, $produccionTotal * 10);
         $eficienciaPeriodo  = max(0, min(100,
-            $produccionEsperada > 0
-                ? round((1 - ($totalMermaPeriodo / $produccionEsperada)) * 100, 2)
+            $produccionEstimada > 0
+                ? round((1 - ($totalMermaPeriodo / $produccionEstimada)) * 100, 2)
                 : 98.5
         ));
 
@@ -184,19 +214,36 @@ class ReportesController extends Controller
             'costoMermaPeriodo', 'lotesCerradosPeriodo', 'eficienciaPeriodo'
         ));
 
+        // Registrar en log la exportación
+        \Illuminate\Support\Facades\Log::info('Reporte PDF exportado', [
+            'usuario' => auth()->user()->name ?? 'N/A',
+            'from' => $from,
+            'to' => $to,
+            'total_mermas' => $totalMermaPeriodo
+        ]);
+
         return $pdf->download('reporte_mermas_' . now()->format('Ymd_His') . '.pdf');
     }
 
     // ─── EXPORT CSV ────────────────────────────────────────────────────────────
     public function exportCsv(Request $request)
     {
-        $from = $request->get('from', now()->startOfMonth()->toDateString());
-        $to   = $request->get('to', now()->toDateString());
+        $fechas = $this->validarFechas($request);
+        $from = $fechas['from'];
+        $to = $fechas['to'];
 
         $mermas = Merma::whereBetween('fecha', [$from, $to])
             ->with(['producto' => fn($q) => $q->withTrashed(), 'usuario'])
             ->orderBy('fecha', 'desc')
             ->get();
+
+        // Registrar en log la exportación
+        \Illuminate\Support\Facades\Log::info('Reporte CSV exportado', [
+            'usuario' => auth()->user()->name ?? 'N/A',
+            'from' => $from,
+            'to' => $to,
+            'registros' => $mermas->count()
+        ]);
 
         return response()->streamDownload(function () use ($mermas) {
             $handle = fopen('php://output', 'w');
@@ -223,8 +270,16 @@ class ReportesController extends Controller
     // ─── EXPORT EXCEL ──────────────────────────────────────────────────────────
     public function exportExcel(Request $request)
     {
-        $from = $request->get('from', now()->startOfMonth()->toDateString());
-        $to   = $request->get('to', now()->toDateString());
+        $fechas = $this->validarFechas($request);
+        $from = $fechas['from'];
+        $to = $fechas['to'];
+
+        // Registrar en log la exportación
+        \Illuminate\Support\Facades\Log::info('Reporte Excel exportado', [
+            'usuario' => auth()->user()->name ?? 'N/A',
+            'from' => $from,
+            'to' => $to
+        ]);
 
         return Excel::download(
             new ReporteCompletoExport($from, $to),

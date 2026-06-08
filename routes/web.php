@@ -2,9 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\{AuthenticatedSessionController, RegistroController};
-use App\Http\Controllers\{InventarioController, ProduccionController, ReportesController, EmpaquetadoController, MateriaPrimaController, RecetaController, ProduccionRealController};
+use App\Http\Controllers\{InventarioController, ProduccionController, ReportesController, EmpaquetadoController, MateriaPrimaController, RecetaController, ProduccionRealController, ControlCalidadController, NotificacionController};
 use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\ControlCalidadController;
 
 // ===========================================
 // 1. RUTAS DE INVITADOS
@@ -29,6 +28,15 @@ Route::middleware(['auth', 'user.status'])->group(function () {
     Route::get('/dashboard', function () {
         return redirect()->route('inventario');
     })->name('dashboard');
+
+    // ===========================================
+    // NOTIFICACIONES
+    // ===========================================
+    Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
+        Route::get('/', [NotificacionController::class, 'index'])->name('index');
+        Route::post('/marcar/{id}', [NotificacionController::class, 'marcar'])->name('marcar');
+        Route::post('/marcar-todas', [NotificacionController::class, 'marcarTodas'])->name('marcar-todas');
+    });
 
     // ===========================================
     // INVENTARIO

@@ -13,26 +13,18 @@
         <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                <div>
+                <div class="md:col-span-2">
                     <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2 tracking-wider">Lote de Producción *</label>
                     <select name="produccion_id" required 
                             class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e7c095] outline-none transition-all">
                         <option value="">Seleccionar lote...</option>
                         @foreach($producciones as $produccion)
-                            <option value="{{ $produccion->id }}">Lote #{{ $produccion->id }} - {{ $produccion->producto->nombre ?? 'N/A' }}</option>
+                            <option value="{{ $produccion->id }}">
+                                Lote #{{ $produccion->id }} - {{ $produccion->producto->nombre ?? 'N/A' }}
+                            </option>
                         @endforeach
                     </select>
-                </div>
-                
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2 tracking-wider">Producto *</label>
-                    <select name="producto_id" required 
-                            class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e7c095] outline-none transition-all">
-                        <option value="">Seleccionar producto...</option>
-                        @foreach($productos as $producto)
-                            <option value="{{ $producto->id }}">{{ $producto->nombre }}</option>
-                        @endforeach
-                    </select>
+                    <p class="text-xs text-gray-500 mt-1">El producto se obtiene automáticamente del lote seleccionado.</p>
                 </div>
                 
                 <div class="md:col-span-2">

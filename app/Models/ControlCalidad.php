@@ -10,7 +10,6 @@ class ControlCalidad extends Model
     
     protected $fillable = [
         'produccion_id',
-        'producto_id',
         'fecha_inspeccion',
         'resultado',
         'motivo_rechazo',
@@ -27,13 +26,14 @@ class ControlCalidad extends Model
         return $this->belongsTo(Produccion::class, 'produccion_id');
     }
     
-    public function producto()
-    {
-        return $this->belongsTo(Producto::class, 'producto_id');  // ← Relación con Producto
-    }
-    
     public function inspector()
     {
         return $this->belongsTo(User::class, 'inspector_id');
+    }
+    
+    // Accesor para obtener el producto a través de la producción
+    public function getProductoAttribute()
+    {
+        return $this->produccion?->producto;
     }
 }

@@ -52,7 +52,7 @@
                 <tr class="border-b border-white/5 hover:bg-white/5 transition">
                     <td class="p-3 text-white">{{ $inspeccion->id }}</td>
                     <td class="p-3 text-white">#{{ $inspeccion->produccion_id }}</td>
-                    <td class="p-3 text-white">{{ $inspeccion->producto->nombre ?? 'N/A' }}</td>
+                    <td class="p-3 text-white">{{ $inspeccion->produccion->producto->nombre ?? 'N/A' }}</td>
                     <td class="p-3">
                         <span class="px-2 py-1 rounded-full text-xs font-semibold
                             {{ $inspeccion->resultado == 'aprobado' ? 'bg-green-500/20 text-green-400' : 

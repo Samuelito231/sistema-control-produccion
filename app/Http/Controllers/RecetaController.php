@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\MateriaPrima;
 use App\Models\Receta;
+use App\Helpers\NotificacionHelper;
 use Illuminate\Http\Request;
 
 class RecetaController extends Controller
@@ -13,6 +14,9 @@ class RecetaController extends Controller
     {
         $recetas = $producto->recetas()->with('materiaPrima')->get();
         $materiasPrimas = MateriaPrima::orderBy('nombre')->get();
+
+        // Verificar materias primas con stock bajo en las recetas
+        $this->verificarStockBajoEnRecetas($recetas);
 
         if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return view('recetas._content', compact('producto', 'recetas', 'materiasPrimas'));
@@ -28,10 +32,15 @@ class RecetaController extends Controller
             'cantidad_necesaria' => 'required|numeric|min:0.001',
         ]);
 
+        $materiaPrima = MateriaPrima::find($request->materia_prima_id);
+        
         $producto->recetas()->updateOrCreate(
             ['materia_prima_id' => $request->materia_prima_id],
             ['cantidad_necesaria' => $request->cantidad_necesaria]
         );
+
+        // Verificar stock bajo de la materia prima agregada
+        $this->verificarStockBajoMP($materiaPrima);
 
         if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json(['success' => true, 'message' => 'Receta actualizada.']);
@@ -49,5 +58,44 @@ class RecetaController extends Controller
         }
 
         return redirect()->route('recetas.index', $producto)->with('success', 'Ingrediente eliminado de la receta.');
+    }
+
+    // =========================================================================
+    // MÉTODOS PRIVADOS DE NOTIFICACIONES
+    // =========================================================================
+
+    /**
+     * Verificar stock bajo en todas las materias primas de las recetas
+     */
+    private function verificarStockBajoEnRecetas($recetas): void
+    {
+        foreach ($recetas as $receta) {
+            $materiaPrima = $receta->materiaPrima;
+            if ($materiaPrima && $materiaPrima->stock_actual <= $materiaPrima->stock_minimo && $materiaPrima->stock_minimo > 0) {
+                NotificacionHelper::stockBajo(
+                    $materiaPrima,
+                    'materia prima (usada en receta)',
+                    $materiaPrima->nombre,
+                    $materiaPrima->stock_actual,
+                    $materiaPrima->stock_minimo
+                );
+            }
+        }
+    }
+
+    /**
+     * Verificar stock bajo de una materia prima específica
+     */
+    private function verificarStockBajoMP(MateriaPrima $materiaPrima): void
+    {
+        if ($materiaPrima->stock_actual <= $materiaPrima->stock_minimo && $materiaPrima->stock_minimo > 0) {
+            NotificacionHelper::stockBajo(
+                $materiaPrima,
+                'materia prima',
+                $materiaPrima->nombre,
+                $materiaPrima->stock_actual,
+                $materiaPrima->stock_minimo
+            );
+        }
     }
 }

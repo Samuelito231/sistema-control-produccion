@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MateriaPrima;
 use App\Models\MovimientoMateriaPrima;
 use App\Helpers\AuditHelper;
+use App\Helpers\NotificacionHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -60,6 +61,9 @@ class MateriaPrimaController extends Controller
                            ->sum(DB::raw('stock_actual * costo_unitario'));
         $bajosMinimo = MateriaPrima::whereColumn('stock_actual', '<', 'stock_minimo')->count();
 
+        // Verificar productos vencidos para notificar
+        $this->verificarProductosVencidos();
+
         if ($request->ajax()) {
             return view('materia_prima._content',
                 compact('materias', 'stockTotal', 'valorTotal', 'bajosMinimo'));
@@ -84,7 +88,6 @@ class MateriaPrimaController extends Controller
             'nombre'           => 'required|string|max:255',
             'sku'              => [
                 'required', 'string', 'max:100',
-                // Ignora soft-deleted al verificar unicidad
                 Rule::unique('materia_prima', 'sku')->whereNull('deleted_at'),
             ],
             'unidad'           => 'required|string|max:20',
@@ -97,15 +100,13 @@ class MateriaPrimaController extends Controller
         ]);
 
         DB::transaction(function () use ($validated) {
-            // Solo los campos del modelo base (sin stock_actual, que se gestiona
-            // vía movimiento para mantener trazabilidad)
             $stockInicial = (float) $validated['stock_actual'];
 
             $mp = MateriaPrima::create([
                 'nombre'           => $validated['nombre'],
                 'sku'              => strtoupper(trim($validated['sku'])),
                 'unidad'           => $validated['unidad'],
-                'stock_actual'     => 0, // parte en 0, el movimiento lo sube
+                'stock_actual'     => 0,
                 'stock_minimo'     => $validated['stock_minimo'] ?? 0,
                 'costo_unitario'   => $validated['costo_unitario'] ?? null,
                 'proveedor'        => $validated['proveedor'] ?? null,
@@ -113,8 +114,6 @@ class MateriaPrimaController extends Controller
                 'fecha_vencimiento'=> $validated['fecha_vencimiento'] ?? null,
             ]);
 
-            // Si hay stock inicial, lo registramos como movimiento de entrada
-            // para que quede trazabilidad desde el primer día
             if ($stockInicial > 0) {
                 $obs = 'Stock inicial al crear el registro';
                 if (!empty($validated['lote_compra'])) {
@@ -163,8 +162,6 @@ class MateriaPrimaController extends Controller
             'lote_compra'      => 'nullable|string|max:100',
             'fecha_vencimiento'=> 'nullable|date',
         ]);
-        // NOTA: stock_actual NO está en el formulario de edición.
-        // El stock se mueve SOLO mediante entradas/salidas.
 
         $oldValues = $materia_prima->toArray();
 
@@ -194,7 +191,6 @@ class MateriaPrimaController extends Controller
 
     public function destroy(MateriaPrima $materia_prima): RedirectResponse
     {
-        // Bloqueamos el borrado si tiene stock positivo para evitar pérdida de datos
         if ($materia_prima->stock_actual > 0) {
             return redirect()
                 ->route('materia-prima.index')
@@ -203,7 +199,7 @@ class MateriaPrimaController extends Controller
 
         DB::transaction(function () use ($materia_prima) {
             $oldValues = $materia_prima->toArray();
-            $materia_prima->delete(); // soft delete
+            $materia_prima->delete();
             AuditHelper::log('delete_materia_prima', $materia_prima, $oldValues, null);
         });
 
@@ -225,7 +221,6 @@ class MateriaPrimaController extends Controller
             ->paginate(30)
             ->withQueryString();
 
-        // Totales del período visible
         $totalEntradas = $materia_prima->movimientos()->where('tipo', 'entrada')->sum('cantidad');
         $totalSalidas  = $materia_prima->movimientos()->where('tipo', 'salida')->sum('cantidad');
 
@@ -256,7 +251,6 @@ class MateriaPrimaController extends Controller
             DB::transaction(function () use ($materia_prima, $validated) {
                 $costo = $validated['costo_unitario'] ?? $materia_prima->costo_unitario;
 
-                // Actualizamos los metadatos de la materia prima si vienen nuevos datos
                 $camposActualizar = [];
 
                 if (!empty($validated['costo_unitario'])) {
@@ -273,19 +267,20 @@ class MateriaPrimaController extends Controller
                     $materia_prima->update($camposActualizar);
                 }
 
-                // Construir observaciones enriquecidas
                 $obs = $validated['observaciones'] ?? '';
                 if (!empty($validated['lote_compra'])) {
                     $obs = ($obs ? $obs . ' — ' : '') . 'Lote: ' . $validated['lote_compra'];
                 }
 
-                // Registrar la entrada (actualiza stock + crea movimiento)
                 $materia_prima->registrarEntrada(
                     (float) $validated['cantidad'],
                     'compra',
                     $obs ?: null,
                     $costo
                 );
+
+                // Verificar stock bajo después de la entrada
+                $this->verificarStockBajo($materia_prima);
 
                 AuditHelper::log('entrada_materia_prima', $materia_prima, null, [
                     'cantidad'       => $validated['cantidad'],
@@ -322,7 +317,6 @@ class MateriaPrimaController extends Controller
                 'required',
                 'numeric',
                 'min:0.0001',
-                // No puede superar el stock actual
                 function ($attribute, $value, $fail) use ($materia_prima) {
                     if ((float) $value > (float) $materia_prima->stock_actual) {
                         $fail("La cantidad ({$value}) supera el stock disponible ({$materia_prima->stock_actual} {$materia_prima->unidad}).");
@@ -335,13 +329,14 @@ class MateriaPrimaController extends Controller
 
         try {
             DB::transaction(function () use ($materia_prima, $validated) {
-                // registrarSalida() en el modelo ya valida stock y lanza excepción
-                // si hay race condition entre la validación de arriba y el descuento
                 $materia_prima->registrarSalida(
                     (float) $validated['cantidad'],
                     $validated['motivo'],
                     $validated['observaciones'] ?? null
                 );
+
+                // Verificar stock bajo después de la salida
+                $this->verificarStockBajo($materia_prima);
 
                 AuditHelper::log('salida_materia_prima', $materia_prima, null, [
                     'cantidad'       => $validated['cantidad'],
@@ -369,14 +364,12 @@ class MateriaPrimaController extends Controller
         $hoy    = Carbon::today();
         $limite = $hoy->copy()->addDays(30);
 
-        // Vencidas
         $vencidas = MateriaPrima::whereNotNull('fecha_vencimiento')
             ->where('fecha_vencimiento', '<', $hoy)
             ->where('stock_actual', '>', 0)
             ->orderBy('fecha_vencimiento')
             ->get();
 
-        // Próximas a vencer (dentro de 30 días)
         $proximasAVencer = MateriaPrima::whereNotNull('fecha_vencimiento')
             ->whereBetween('fecha_vencimiento', [$hoy, $limite])
             ->orderBy('fecha_vencimiento')
@@ -384,5 +377,43 @@ class MateriaPrimaController extends Controller
 
         return view('materia_prima.por_vencer',
             compact('vencidas', 'proximasAVencer'));
+    }
+
+    // =========================================================================
+    // MÉTODOS PRIVADOS DE NOTIFICACIONES
+    // =========================================================================
+
+    /**
+     * Verificar stock bajo y generar notificaciones
+     */
+    private function verificarStockBajo(MateriaPrima $materia_prima): void
+    {
+        if ($materia_prima->stock_actual <= $materia_prima->stock_minimo && $materia_prima->stock_minimo > 0) {
+            NotificacionHelper::stockBajo(
+                $materia_prima,
+                'materia prima',
+                $materia_prima->nombre,
+                $materia_prima->stock_actual,
+                $materia_prima->stock_minimo
+            );
+        }
+    }
+
+    /**
+     * Verificar productos vencidos y generar notificaciones
+     */
+    private function verificarProductosVencidos(): void
+    {
+        $hoy = Carbon::today();
+        
+        $vencidos = MateriaPrima::whereNotNull('fecha_vencimiento')
+            ->where('fecha_vencimiento', '<', $hoy)
+            ->where('stock_actual', '>', 0)
+            ->get();
+
+        foreach ($vencidos as $producto) {
+            // Verificar si ya se notificó este vencimiento (opcional: usar una tabla de logs)
+            NotificacionHelper::productoVencido($producto);
+        }
     }
 }

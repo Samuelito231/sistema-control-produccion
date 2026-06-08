@@ -26,7 +26,7 @@
                 @php
                     $info = [
                         ['label' => 'Producción',         'value' => '#' . $controlCalidad->produccion_id],
-                        ['label' => 'Producto',           'value' => $controlCalidad->producto->nombre ?? 'N/A'],
+                        ['label' => 'Producto',           'value' => $controlCalidad->produccion->producto->nombre ?? 'N/A'],
                         ['label' => 'Inspector',          'value' => $controlCalidad->inspector->name ?? 'N/A'],
                         ['label' => 'Fecha de Inspección','value' => $controlCalidad->fecha_inspeccion->format('d/m/Y')],
                         ['label' => 'Creado el',          'value' => $controlCalidad->created_at->format('d/m/Y H:i')],

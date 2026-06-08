@@ -7,6 +7,7 @@ use App\Models\Produccion;
 use App\Models\Merma;
 use App\Models\MateriaPrima;
 use App\Helpers\AuditHelper;
+use App\Helpers\NotificacionHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -30,10 +31,10 @@ class ProduccionRealController extends Controller
     {
         $request->validate([
             'producto_id' => 'required|exists:productos,id',
-            'cantidad_producida' => 'required|numeric|min:0',      // ELABORADO
-            'producto_desechado' => 'nullable|numeric|min:0',       // DESECHADO
-            'materia_prima_desechada' => 'nullable|numeric|min:0',  // MP desechada
-            'mp_consumida_real' => 'nullable|numeric|min:0',        // MP consumida real (opcional)
+            'cantidad_producida' => 'required|numeric|min:0',
+            'producto_desechado' => 'nullable|numeric|min:0',
+            'materia_prima_desechada' => 'nullable|numeric|min:0',
+            'mp_consumida_real' => 'nullable|numeric|min:0',
             'fecha_produccion' => 'required|date',
             'lote' => 'nullable|string|max:50',
             'observaciones' => 'nullable|string',
@@ -95,11 +96,17 @@ class ProduccionRealController extends Controller
                 $materiaPrima = $receta->materiaPrima;
                 $cantidadConsumida = ($receta->cantidad_necesaria * $elaborado) + ($receta->cantidad_necesaria * ($mpDesechada / max($elaborado, 1)));
                 $materiaPrima->registrarSalida($cantidadConsumida, 'consumo_produccion', "Consumo para producción del lote {$request->lote} (ID {$produccion->id})");
+                
+                // Verificar stock bajo de materia prima después del consumo
+                $this->verificarStockBajoMP($materiaPrima);
             }
 
             // Aumentar stock del producto terminado (solo el elaborado)
             $producto->stock_actual += $elaborado;
             $producto->save();
+
+            // Verificar stock bajo del producto terminado
+            $this->verificarStockBajoProducto($producto);
 
             // Registrar merma de PT si hay desechado
             if ($desechado > 0) {
@@ -151,5 +158,41 @@ class ProduccionRealController extends Controller
         }
 
         return view('produccion_real.historial', compact('producciones'));
+    }
+
+    // =========================================================================
+    // MÉTODOS PRIVADOS DE NOTIFICACIONES
+    // =========================================================================
+
+    /**
+     * Verificar stock bajo de materia prima
+     */
+    private function verificarStockBajoMP(MateriaPrima $materiaPrima): void
+    {
+        if ($materiaPrima->stock_actual <= $materiaPrima->stock_minimo && $materiaPrima->stock_minimo > 0) {
+            NotificacionHelper::stockBajo(
+                $materiaPrima,
+                'materia prima',
+                $materiaPrima->nombre,
+                $materiaPrima->stock_actual,
+                $materiaPrima->stock_minimo
+            );
+        }
+    }
+
+    /**
+     * Verificar stock bajo de producto terminado
+     */
+    private function verificarStockBajoProducto(Producto $producto): void
+    {
+        if ($producto->stock_actual <= $producto->stock_minimo && $producto->stock_minimo > 0) {
+            NotificacionHelper::stockBajo(
+                $producto,
+                'producto terminado',
+                $producto->nombre,
+                $producto->stock_actual,
+                $producto->stock_minimo
+            );
+        }
     }
 }
