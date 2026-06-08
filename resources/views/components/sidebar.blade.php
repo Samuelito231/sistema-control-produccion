@@ -1,64 +1,165 @@
+<style>
+    #mainSidebar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(231,192,149,0.25) transparent;
+    }
+    #mainSidebar::-webkit-scrollbar { width: 3px; }
+    #mainSidebar::-webkit-scrollbar-track { background: transparent; }
+    #mainSidebar::-webkit-scrollbar-thumb { background: rgba(231,192,149,0.25); border-radius: 10px; }
+    #mainSidebar::-webkit-scrollbar-thumb:hover { background: rgba(231,192,149,0.5); }
+
+    /* Dropdown panel */
+    .sb-panel {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sb-panel.open {
+        grid-template-rows: 1fr;
+    }
+    .sb-panel > div {
+        overflow: hidden;
+    }
+
+    /* Chevron */
+    .sb-chevron {
+        transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
+        flex-shrink: 0;
+    }
+    .sb-chevron.open {
+        transform: rotate(180deg);
+    }
+
+    /* Trigger button */
+    .sb-trigger {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        background: none;
+        text-align: left;
+        transition: background 120ms, border-color 120ms;
+        user-select: none;
+    }
+    .sb-trigger:hover {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.08);
+    }
+    .sb-trigger.active {
+        background: rgba(231,192,149,0.08);
+        border-color: rgba(231,192,149,0.25);
+    }
+    .sb-trigger-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Sub-links */
+    .sb-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        transition: background 100ms, color 100ms;
+        color: #6b7280;
+        text-decoration: none;
+        line-height: 1.3;
+    }
+    .sb-link:hover {
+        background: rgba(255,255,255,0.05);
+        color: #f1f5f9;
+    }
+    .sb-link.active {
+        background: rgba(231,192,149,0.1);
+        color: #e7c095;
+    }
+    .sb-link.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+</style>
+
 <aside class="w-72 h-screen sticky top-0 flex flex-col bg-black/30 backdrop-blur-xl border-r border-white/10 shadow-2xl overflow-y-auto" id="mainSidebar">
-    <div class="px-6 pt-8 pb-4 border-b border-white/10">
-        <div class="flex flex-col">
-            <span class="text-[10px] font-semibold tracking-[0.2em] text-[#e7c095] uppercase">Sistema de Control</span>
-            <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-[#e7c095] to-[#dbb57a] bg-clip-text text-transparent drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                KHALEESITAS
-            </h1>
-        </div>
+
+    {{-- Logo --}}
+    <div class="px-6 pt-8 pb-4 border-b border-white/10 flex-shrink-0">
+        <span class="text-[10px] font-semibold tracking-[0.2em] text-[#e7c095] uppercase">Sistema de Control</span>
+        <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-[#e7c095] to-[#dbb57a] bg-clip-text text-transparent drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+            KHALEESITAS
+        </h1>
     </div>
 
-    <nav class="flex-1 px-4 py-6 space-y-2">
-        
-        <div class="relative">
-            <input type="checkbox" id="inventarioDropdown" class="hidden peer">
-            <label for="inventarioDropdown" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer {{ request()->routeIs('materia-prima*') || request()->routeIs('inventario*') ? 'bg-[#e7c095]/10 border border-[#e7c095]/30' : 'hover:bg-white/5 border border-transparent hover:border-white/10' }}">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-2xl">inventory</span>
-                    <span class="font-medium text-sm">Inventario</span>
+    {{-- Nav --}}
+    <nav class="flex-1 px-3 py-5 space-y-1">
+
+        {{-- Inventario --}}
+        <div>
+            <button type="button"
+                class="sb-trigger {{ request()->routeIs('materia-prima*') || request()->routeIs('inventario*') ? 'active' : '' }}"
+                data-sb="inventario">
+                <div class="sb-trigger-left">
+                    <span class="material-symbols-outlined text-xl text-gray-400">inventory</span>
+                    <span class="font-medium text-sm text-gray-200">Inventario</span>
                 </div>
-                <span class="material-symbols-outlined text-gray-400 text-base transition-transform peer-checked:rotate-180">expand_more</span>
-            </label>
-            <div class="grid grid-rows-[0fr] peer-checked:grid-rows-[1fr] transition-all duration-300">
-                <div class="overflow-hidden">
-                    <div class="pl-8 space-y-1 mt-1">
-                        <a href="{{ route('materia-prima.index') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('materia-prima*') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">grass</span> Materia Prima
+                <span class="material-symbols-outlined text-gray-500 text-[18px] sb-chevron" data-chevron="inventario">expand_more</span>
+            </button>
+            <div class="sb-panel" data-panel="inventario">
+                <div>
+                    <div class="pl-9 pt-1 pb-1 space-y-0.5">
+                        <a href="{{ route('materia-prima.index') }}"
+                           class="sb-link {{ request()->routeIs('materia-prima*') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">grass</span> Materia Prima
                         </a>
-                        <a href="{{ route('inventario') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('inventario*') && !request()->routeIs('materia-prima*') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">box</span> Productos Terminados
+                        <a href="{{ route('inventario') }}"
+                           class="sb-link {{ request()->routeIs('inventario*') && !request()->routeIs('materia-prima*') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">box</span> Productos Terminados
                         </a>
                     </div>
                 </div>
             </div>
         </div>
 
+        {{-- Producción --}}
         @if(in_array(Auth::user()->role, ['admin', 'operario', 'auditor', 'analista']))
-        <div class="relative">
-            <input type="checkbox" id="produccionDropdown" class="hidden peer">
-            <label for="produccionDropdown" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer {{ request()->routeIs('produccion_real*') || request()->routeIs('produccion*') || request()->routeIs('control-calidad*') ? 'bg-[#e7c095]/10 border border-[#e7c095]/30' : 'hover:bg-white/5 border border-transparent hover:border-white/10' }}">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-2xl">factory</span>
-                    <span class="font-medium text-sm">Producción</span>
+        <div>
+            <button type="button"
+                class="sb-trigger {{ request()->routeIs('produccion_real*') || request()->routeIs('produccion*') || request()->routeIs('control-calidad*') ? 'active' : '' }}"
+                data-sb="produccion">
+                <div class="sb-trigger-left">
+                    <span class="material-symbols-outlined text-xl text-gray-400">factory</span>
+                    <span class="font-medium text-sm text-gray-200">Producción</span>
                 </div>
-                <span class="material-symbols-outlined text-gray-400 text-base transition-transform peer-checked:rotate-180">expand_more</span>
-            </label>
-            <div class="grid grid-rows-[0fr] peer-checked:grid-rows-[1fr] transition-all duration-300">
-                <div class="overflow-hidden">
-                    <div class="pl-8 space-y-1 mt-1">
+                <span class="material-symbols-outlined text-gray-500 text-[18px] sb-chevron" data-chevron="produccion">expand_more</span>
+            </button>
+            <div class="sb-panel" data-panel="produccion">
+                <div>
+                    <div class="pl-9 pt-1 pb-1 space-y-0.5">
                         @if(in_array(Auth::user()->role, ['admin', 'operario']))
-                        <a href="{{ route('produccion_real.create') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('produccion_real.create') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">add</span> Registrar Producción
+                        <a href="{{ route('produccion_real.create') }}"
+                           class="sb-link {{ request()->routeIs('produccion_real.create') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">add</span> Registrar Producción
                         </a>
-                        <a href="{{ route('produccion_real.historial') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('produccion_real.historial') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">history</span> Historial de Producción
+                        <a href="{{ route('produccion_real.historial') }}"
+                           class="sb-link {{ request()->routeIs('produccion_real.historial') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">history</span> Historial de Producción
                         </a>
-                        <a href="{{ route('produccion') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('produccion') && !request()->routeIs('produccion_real*') && !request()->routeIs('control-calidad*') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">delete_sweep</span> Merma en Producción
+                        <a href="{{ route('produccion') }}"
+                           class="sb-link {{ request()->routeIs('produccion') && !request()->routeIs('produccion_real*') && !request()->routeIs('control-calidad*') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">delete_sweep</span> Merma en Producción
                         </a>
                         @endif
-                        <a href="{{ route('control-calidad.index') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('control-calidad*') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">science</span> Control de Calidad
+                        <a href="{{ route('control-calidad.index') }}"
+                           class="sb-link {{ request()->routeIs('control-calidad*') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">science</span> Control de Calidad
                         </a>
                     </div>
                 </div>
@@ -66,21 +167,24 @@
         </div>
         @endif
 
+        {{-- Empaquetado --}}
         @if(in_array(Auth::user()->role, ['admin', 'operario']))
-        <div class="relative">
-            <input type="checkbox" id="empaquetadoDropdown" class="hidden peer">
-            <label for="empaquetadoDropdown" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer {{ request()->routeIs('empaquetado*') ? 'bg-[#e7c095]/10 border border-[#e7c095]/30' : 'hover:bg-white/5 border border-transparent hover:border-white/10' }}">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-2xl">package</span>
-                    <span class="font-medium text-sm">Empaquetado</span>
+        <div>
+            <button type="button"
+                class="sb-trigger {{ request()->routeIs('empaquetado*') ? 'active' : '' }}"
+                data-sb="empaquetado">
+                <div class="sb-trigger-left">
+                    <span class="material-symbols-outlined text-xl text-gray-400">package</span>
+                    <span class="font-medium text-sm text-gray-200">Empaquetado</span>
                 </div>
-                <span class="material-symbols-outlined text-gray-400 text-base transition-transform peer-checked:rotate-180">expand_more</span>
-            </label>
-            <div class="grid grid-rows-[0fr] peer-checked:grid-rows-[1fr] transition-all duration-300">
-                <div class="overflow-hidden">
-                    <div class="pl-8 space-y-1 mt-1">
-                        <a href="{{ route('empaquetado') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('empaquetado') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">delete_sweep</span> Merma en Empaquetado
+                <span class="material-symbols-outlined text-gray-500 text-[18px] sb-chevron" data-chevron="empaquetado">expand_more</span>
+            </button>
+            <div class="sb-panel" data-panel="empaquetado">
+                <div>
+                    <div class="pl-9 pt-1 pb-1 space-y-0.5">
+                        <a href="{{ route('empaquetado') }}"
+                           class="sb-link {{ request()->routeIs('empaquetado') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">delete_sweep</span> Merma en Empaquetado
                         </a>
                     </div>
                 </div>
@@ -88,24 +192,26 @@
         </div>
         @endif
 
+        {{-- Distribución --}}
         @if(in_array(Auth::user()->role, ['admin', 'operario']))
-        <div class="relative">
-            <input type="checkbox" id="distribucionDropdown" class="hidden peer">
-            <label for="distribucionDropdown" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer {{ request()->routeIs('envios*') ? 'bg-[#e7c095]/10 border border-[#e7c095]/30' : 'hover:bg-white/5 border border-transparent hover:border-white/10' }}">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-2xl">local_shipping</span>
-                    <span class="font-medium text-sm">Distribución</span>
+        <div>
+            <button type="button"
+                class="sb-trigger {{ request()->routeIs('envios*') ? 'active' : '' }}"
+                data-sb="distribucion">
+                <div class="sb-trigger-left">
+                    <span class="material-symbols-outlined text-xl text-gray-400">local_shipping</span>
+                    <span class="font-medium text-sm text-gray-200">Distribución</span>
                 </div>
-                <span class="material-symbols-outlined text-gray-400 text-base transition-transform peer-checked:rotate-180">expand_more</span>
-            </label>
-            <div class="grid grid-rows-[0fr] peer-checked:grid-rows-[1fr] transition-all duration-300">
-                <div class="overflow-hidden">
-                    <div class="pl-8 space-y-1 mt-1">
-                        <a href="#" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 text-gray-500 opacity-60 cursor-not-allowed">
-                            <span class="material-symbols-outlined text-sm">add</span> Registrar Envío
+                <span class="material-symbols-outlined text-gray-500 text-[18px] sb-chevron" data-chevron="distribucion">expand_more</span>
+            </button>
+            <div class="sb-panel" data-panel="distribucion">
+                <div>
+                    <div class="pl-9 pt-1 pb-1 space-y-0.5">
+                        <a href="#" class="sb-link disabled">
+                            <span class="material-symbols-outlined text-[15px]">add</span> Registrar Envío
                         </a>
-                        <a href="#" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 text-gray-500 opacity-60 cursor-not-allowed">
-                            <span class="material-symbols-outlined text-sm">history</span> Historial de Envíos
+                        <a href="#" class="sb-link disabled">
+                            <span class="material-symbols-outlined text-[15px]">history</span> Historial de Envíos
                         </a>
                     </div>
                 </div>
@@ -113,24 +219,27 @@
         </div>
         @endif
 
+        {{-- Reportes --}}
         @if(in_array(Auth::user()->role, ['admin', 'operario', 'auditor', 'analista', 'empaquetador']))
-        <div class="relative">
-            <input type="checkbox" id="reportesDropdown" class="hidden peer">
-            <label for="reportesDropdown" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer {{ request()->routeIs('reportes*') ? 'bg-[#e7c095]/10 border border-[#e7c095]/30' : 'hover:bg-white/5 border border-transparent hover:border-white/10' }}">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-2xl">analytics</span>
-                    <span class="font-medium text-sm">Reportes</span>
+        <div>
+            <button type="button"
+                class="sb-trigger {{ request()->routeIs('reportes*') ? 'active' : '' }}"
+                data-sb="reportes">
+                <div class="sb-trigger-left">
+                    <span class="material-symbols-outlined text-xl text-gray-400">analytics</span>
+                    <span class="font-medium text-sm text-gray-200">Reportes</span>
                 </div>
-                <span class="material-symbols-outlined text-gray-400 text-base transition-transform peer-checked:rotate-180">expand_more</span>
-            </label>
-            <div class="grid grid-rows-[0fr] peer-checked:grid-rows-[1fr] transition-all duration-300">
-                <div class="overflow-hidden">
-                    <div class="pl-8 space-y-1 mt-1">
-                        <a href="{{ route('reportes') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('reportes') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">bar_chart</span> Reportes de Merma
+                <span class="material-symbols-outlined text-gray-500 text-[18px] sb-chevron" data-chevron="reportes">expand_more</span>
+            </button>
+            <div class="sb-panel" data-panel="reportes">
+                <div>
+                    <div class="pl-9 pt-1 pb-1 space-y-0.5">
+                        <a href="{{ route('reportes') }}"
+                           class="sb-link {{ request()->routeIs('reportes') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">bar_chart</span> Reportes de Merma
                         </a>
-                        <a href="#" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 text-gray-500 opacity-60 cursor-not-allowed">
-                            <span class="material-symbols-outlined text-sm">timeline</span> Trazabilidad
+                        <a href="#" class="sb-link disabled">
+                            <span class="material-symbols-outlined text-[15px]">timeline</span> Trazabilidad
                         </a>
                     </div>
                 </div>
@@ -138,77 +247,131 @@
         </div>
         @endif
 
+        {{-- Administración --}}
         @if(Auth::user()->role === 'admin')
-        <div class="relative">
-            <input type="checkbox" id="adminDropdown" class="hidden peer">
-            <label for="adminDropdown" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer {{ request()->routeIs('admin*') ? 'bg-[#e7c095]/10 border border-[#e7c095]/30' : 'hover:bg-white/5 border border-transparent hover:border-white/10' }}">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-2xl">settings</span>
-                    <span class="font-medium text-sm">Administración</span>
+        <div>
+            <button type="button"
+                class="sb-trigger {{ request()->routeIs('admin*') ? 'active' : '' }}"
+                data-sb="admin">
+                <div class="sb-trigger-left">
+                    <span class="material-symbols-outlined text-xl text-gray-400">settings</span>
+                    <span class="font-medium text-sm text-gray-200">Administración</span>
                 </div>
-                <span class="material-symbols-outlined text-gray-400 text-base transition-transform peer-checked:rotate-180">expand_more</span>
-            </label>
-            <div class="grid grid-rows-[0fr] peer-checked:grid-rows-[1fr] transition-all duration-300">
-                <div class="overflow-hidden">
-                    <div class="pl-8 space-y-1 mt-1">
-                        <a href="{{ route('admin.usuarios') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 {{ request()->routeIs('admin.usuarios*') ? 'bg-[#e7c095]/10 text-[#e7c095]' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">admin_panel_settings</span> Usuarios
+                <span class="material-symbols-outlined text-gray-500 text-[18px] sb-chevron" data-chevron="admin">expand_more</span>
+            </button>
+            <div class="sb-panel" data-panel="admin">
+                <div>
+                    <div class="pl-9 pt-1 pb-1 space-y-0.5">
+                        <a href="{{ route('admin.usuarios') }}"
+                           class="sb-link {{ request()->routeIs('admin.usuarios*') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">admin_panel_settings</span> Usuarios
                         </a>
                     </div>
                 </div>
             </div>
         </div>
         @endif
+
     </nav>
 
-    <div class="px-4 pb-6 border-t border-white/10 pt-4">
-        <div class="flex items-center gap-3 mb-4 p-2 rounded-xl bg-white/5">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#e7c095] to-[#b87a3a] flex items-center justify-center text-black font-bold shadow-md">
-                {{ substr(Auth::user()->name ?? 'U', 0, 2) }}
+    {{-- Usuario + Logout --}}
+    <div class="px-3 pb-5 pt-3 border-t border-white/10 flex-shrink-0">
+        <div class="flex items-center gap-3 mb-3 p-2.5 rounded-xl bg-white/[0.04]">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#e7c095] to-[#b87a3a] flex items-center justify-center text-black text-xs font-bold shadow flex-shrink-0">
+                {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
             </div>
-            <div>
-                <p class="text-sm font-semibold text-white">{{ Auth::user()->name ?? 'Usuario' }}</p>
+            <div class="min-w-0">
+                <p class="text-sm font-semibold text-white truncate">{{ Auth::user()->name ?? 'Usuario' }}</p>
                 <p class="text-xs text-gray-400">{{ ucfirst(Auth::user()->role ?? 'Operario') }}</p>
             </div>
         </div>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:bg-red-500/10 hover:text-red-400 transition-all">
-                <span class="material-symbols-outlined text-xl">logout</span> Cerrar sesión
+            <button type="submit"
+                class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors duration-100">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                Cerrar sesión
             </button>
         </form>
     </div>
 </aside>
 
 <script>
-    (function() {
-        // Tu lógica original de scroll y carga de estado se mantiene intacta
-        const sidebar = document.getElementById('mainSidebar');
-        const savedScroll = localStorage.getItem('sidebarScroll');
-        if (savedScroll && sidebar) sidebar.scrollTop = parseInt(savedScroll);
-        
-        if (sidebar) {
-            sidebar.addEventListener('scroll', () => localStorage.setItem('sidebarScroll', sidebar.scrollTop));
-        }
+(function () {
+    var sidebar = document.getElementById('mainSidebar');
 
-        const checkboxes = ['inventarioDropdown', 'produccionDropdown', 'empaquetadoDropdown', 'distribucionDropdown', 'reportesDropdown', 'adminDropdown'];
-        
-        checkboxes.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            
-            // Cargar estado
-            if (localStorage.getItem(id + 'Open') === 'true') el.checked = true;
-            
-            // Guardar estado
-            el.addEventListener('change', () => localStorage.setItem(id + 'Open', el.checked));
+    // ── Restaurar scroll ──────────────────────────────────────────
+    var savedScroll = localStorage.getItem('sidebarScroll');
+    if (savedScroll && sidebar) sidebar.scrollTop = parseInt(savedScroll, 10);
+    if (sidebar) {
+        sidebar.addEventListener('scroll', function () {
+            localStorage.setItem('sidebarScroll', sidebar.scrollTop);
         });
-    })();
-</script>
+    }
 
-<style>
-    #mainSidebar::-webkit-scrollbar { width: 4px; }
-    #mainSidebar::-webkit-scrollbar-track { background: transparent; }
-    #mainSidebar::-webkit-scrollbar-thumb { background: rgba(231, 192, 149, 0.3); border-radius: 10px; }
-    #mainSidebar::-webkit-scrollbar-thumb:hover { background: rgba(231, 192, 149, 0.6); }
-</style>
+    // ── Toggle panels (accordion) ─────────────────────────────────
+    var triggers = document.querySelectorAll('[data-sb]');
+
+    // Construir mapa de todos los paneles para poder cerrarlos
+    var all = {};
+    triggers.forEach(function (btn) {
+        var key = btn.dataset.sb;
+        all[key] = {
+            btn:     btn,
+            panel:   document.querySelector('[data-panel="' + key + '"]'),
+            chevron: document.querySelector('[data-chevron="' + key + '"]')
+        };
+    });
+
+    function closeAll(except) {
+        Object.keys(all).forEach(function (k) {
+            if (k === except) return;
+            var item = all[k];
+            if (!item.panel) return;
+            item.panel.classList.remove('open');
+            if (item.chevron) item.chevron.classList.remove('open');
+            localStorage.setItem('sb_' + k, 'false');
+        });
+    }
+
+    function setOpen(key, open) {
+        var item = all[key];
+        if (!item || !item.panel) return;
+        if (open) {
+            item.panel.classList.add('open');
+            if (item.chevron) item.chevron.classList.add('open');
+        } else {
+            item.panel.classList.remove('open');
+            if (item.chevron) item.chevron.classList.remove('open');
+        }
+        localStorage.setItem('sb_' + key, open ? 'true' : 'false');
+    }
+
+    // Estado inicial
+    triggers.forEach(function (btn) {
+        var key    = btn.dataset.sb;
+        var item   = all[key];
+        if (!item.panel) return;
+        var isOpen = btn.classList.contains('active') || localStorage.getItem('sb_' + key) === 'true';
+        // Solo abre el activo al cargar; los demás respetan localStorage pero
+        // si hay más de uno guardado como abierto, solo dejamos el activo
+        if (btn.classList.contains('active')) {
+            setOpen(key, true);
+        } else if (isOpen) {
+            setOpen(key, true);
+        }
+    });
+
+    // Click: cierra todos los demás, toggle el clickeado
+    triggers.forEach(function (btn) {
+        var key = btn.dataset.sb;
+        var item = all[key];
+        if (!item.panel) return;
+        btn.addEventListener('click', function () {
+            var nowOpen = item.panel.classList.contains('open');
+            closeAll(key);
+            setOpen(key, !nowOpen);
+        });
+    });
+})();
+</script>

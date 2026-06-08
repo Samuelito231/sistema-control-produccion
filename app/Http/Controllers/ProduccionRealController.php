@@ -7,7 +7,7 @@ use App\Models\Produccion;
 use App\Models\Merma;
 use App\Models\MateriaPrima;
 use App\Helpers\AuditHelper;
-use App\Helpers\NotificacionHelper;
+use App\Events\StockBajoEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -97,7 +97,7 @@ class ProduccionRealController extends Controller
                 $cantidadConsumida = ($receta->cantidad_necesaria * $elaborado) + ($receta->cantidad_necesaria * ($mpDesechada / max($elaborado, 1)));
                 $materiaPrima->registrarSalida($cantidadConsumida, 'consumo_produccion', "Consumo para producción del lote {$request->lote} (ID {$produccion->id})");
                 
-                // Verificar stock bajo de materia prima después del consumo
+                // Verificar stock bajo de materia prima después del consumo (usando EVENTO)
                 $this->verificarStockBajoMP($materiaPrima);
             }
 
@@ -105,7 +105,7 @@ class ProduccionRealController extends Controller
             $producto->stock_actual += $elaborado;
             $producto->save();
 
-            // Verificar stock bajo del producto terminado
+            // Verificar stock bajo del producto terminado (usando EVENTO)
             $this->verificarStockBajoProducto($producto);
 
             // Registrar merma de PT si hay desechado
@@ -161,38 +161,38 @@ class ProduccionRealController extends Controller
     }
 
     // =========================================================================
-    // MÉTODOS PRIVADOS DE NOTIFICACIONES
+    // MÉTODOS PRIVADOS DE NOTIFICACIONES CON EVENTOS
     // =========================================================================
 
     /**
-     * Verificar stock bajo de materia prima
+     * Verificar stock bajo de materia prima y disparar evento
      */
     private function verificarStockBajoMP(MateriaPrima $materiaPrima): void
     {
         if ($materiaPrima->stock_actual <= $materiaPrima->stock_minimo && $materiaPrima->stock_minimo > 0) {
-            NotificacionHelper::stockBajo(
+            event(new StockBajoEvent(
                 $materiaPrima,
                 'materia prima',
                 $materiaPrima->nombre,
                 $materiaPrima->stock_actual,
                 $materiaPrima->stock_minimo
-            );
+            ));
         }
     }
 
     /**
-     * Verificar stock bajo de producto terminado
+     * Verificar stock bajo de producto terminado y disparar evento
      */
     private function verificarStockBajoProducto(Producto $producto): void
     {
         if ($producto->stock_actual <= $producto->stock_minimo && $producto->stock_minimo > 0) {
-            NotificacionHelper::stockBajo(
+            event(new StockBajoEvent(
                 $producto,
                 'producto terminado',
                 $producto->nombre,
                 $producto->stock_actual,
                 $producto->stock_minimo
-            );
+            ));
         }
     }
 }

@@ -1,94 +1,97 @@
 @extends('components.panel')
 
 @section('content')
-<div class="p-8">
-    <!-- Encabezado -->
-    <div class="flex justify-between items-start mb-8">
+<div class="p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-700">
+    
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-[#e7c095] tracking-tight">Materia Prima</h1>
-            <p class="text-slate-400 mt-1">Control integral de inventario y activos</p>
+            <h1 class="text-3xl font-black text-white tracking-tight">Materia Prima</h1>
+            <p class="text-gray-400 text-sm">Gestión analítica de activos y existencias en tiempo real</p>
         </div>
+        
         @if(auth()->user()->role === 'admin')
             <a href="{{ route('materia-prima.create') }}" 
-               class="bg-[#e7c095] hover:bg-[#d4ad85] text-black px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-[0_0_15px_rgba(231,192,149,0.2)]">
-                + Nueva Materia Prima
+               class="flex items-center gap-2 bg-[#e7c095]/10 border border-[#e7c095]/20 px-6 py-2.5 rounded-xl text-[#e7c095] hover:bg-[#e7c095]/20 transition-all font-bold text-xs uppercase tracking-widest">
+                <span class="material-symbols-outlined text-sm">add</span> Nueva Referencia
             </a>
         @endif
-    </div>
+    </header>
 
-    <!-- Tarjetas de métricas -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div class="bg-gradient-to-br from-white/5 to-black/40 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
-            <p class="text-slate-500 text-xs uppercase tracking-widest font-semibold mb-2">Total Referencias</p>
-            <p class="text-4xl font-light text-white">{{ $materias->total() }}</p>
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        @php
+            $stats = [
+                ['Total Referencias', $materias->total(), 'ítems', 'inventory'],
+                ['Stock Total', number_format($stockTotal, 2), 'unidades', 'box'],
+                ['Valor Activos', '$' . number_format($valorTotal, 2), 'inversión', 'analytics']
+            ];
+        @endphp
+        
+        @foreach($stats as $stat)
+        <div class="bg-black/40 backdrop-blur-md border border-white/10 p-6 rounded-2xl flex justify-between items-center group hover:border-[#e7c095]/30 transition-all">
+            <div>
+                <h3 class="text-[10px] font-bold uppercase text-slate-500 mb-2 tracking-widest">{{ $stat[0] }}</h3>
+                <span class="text-2xl font-black text-white">{{ $stat[1] }}</span>
+                <p class="text-[10px] text-[#e7c095]/80 mt-1 uppercase font-bold">{{ $stat[2] }}</p>
+            </div>
+            <span class="material-symbols-outlined text-3xl text-white/10 group-hover:text-[#e7c095]/40 transition-colors">{{ $stat[3] }}</span>
         </div>
-        <div class="bg-gradient-to-br from-white/5 to-black/40 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
-            <p class="text-slate-500 text-xs uppercase tracking-widest font-semibold mb-2">Stock Total</p>
-            <p class="text-4xl font-light text-white">{{ number_format($stockTotal, 2) }}</p>
-            <p class="text-[#e7c095] text-xs mt-1">unidades en inventario</p>
-        </div>
-        <div class="bg-gradient-to-br from-white/5 to-black/40 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
-            <p class="text-slate-500 text-xs uppercase tracking-widest font-semibold mb-2">Valoración Activos</p>
-            <p class="text-4xl font-light text-white">${{ number_format($valorTotal, 2) }}</p>
-            <p class="text-[#e7c095] text-xs mt-1">valor estimado</p>
-        </div>
-    </div>
+        @endforeach
+    </section>
 
-    <!-- Tabla -->
-    <div class="overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm">
-        <table class="w-full text-sm text-left">
-            <thead class="bg-white/5 text-slate-400 border-b border-white/10">
+    <div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="font-bold text-white uppercase text-[10px] tracking-widest">Inventario Actual</h3>
+        </div>
+        <table class="w-full text-left text-sm">
+            <thead class="bg-white/5 text-[10px] uppercase tracking-widest text-gray-400">
                 <tr>
-                    <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Producto</th>
-                    <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">SKU</th>
-                    <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px] text-right">Stock</th>
-                    <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px] text-right">Costo</th>
-                    <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Lote Compra</th>
-                    <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Vencimiento</th>
-                    <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px] text-center">Gestión</th>
+                    <th class="p-6">Producto</th>
+                    <th class="p-6">SKU</th>
+                    <th class="p-6">Stock</th>
+                    <th class="p-6">Costo</th>
+                    <th class="p-6">Vencimiento</th>
+                    <th class="p-6 text-right">Acciones</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-white/10">
+            <tbody class="divide-y divide-white/5">
                 @forelse($materias as $mp)
                 <tr class="hover:bg-white/5 transition-colors">
-                    <td class="px-6 py-4">
-                        <div class="font-medium text-white">{{ $mp->nombre }}</div>
-                        @if($mp->stock_actual <= $mp->stock_minimo)
-                            <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-[10px] font-bold">Stock Crítico</span>
-                        @endif
+                    <td class="p-6">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-gray-500">grass</span>
+                            <div class="flex flex-col">
+                                <span class="text-white font-semibold">{{ $mp->nombre }}</span>
+                                @if($mp->stock_actual <= $mp->stock_minimo)
+                                    <span class="text-[9px] uppercase font-bold text-amber-500">Stock bajo</span>
+                                @endif
+                            </div>
+                        </div>
                     </td>
-                    <td class="px-6 py-4 font-mono text-slate-400">{{ $mp->sku }}</td>
-                    <td class="px-6 py-4 text-right font-mono text-white">{{ number_format($mp->stock_actual, 2) }}</td>
-                    <td class="px-6 py-4 text-right font-mono text-white">${{ number_format($mp->costo_unitario, 2) }}</td>
-                    <td class="px-6 py-4 font-mono text-slate-400">{{ $mp->lote_compra ?? '—' }}</td>
-                    <td class="px-6 py-4 text-slate-400">{{ $mp->fecha_vencimiento ? \Carbon\Carbon::parse($mp->fecha_vencimiento)->format('d/m/Y') : '—' }}</td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="flex items-center justify-center gap-3 text-xs">
-                            <a href="{{ route('materia-prima.movimientos', $mp) }}" class="text-blue-400 hover:text-blue-300">Log</a>
+                    <td class="p-6 text-gray-400 font-mono">{{ $mp->sku }}</td>
+                    <td class="p-6 text-white font-mono font-bold">{{ number_format($mp->stock_actual, 2) }}</td>
+                    <td class="p-6 text-white font-mono">${{ number_format($mp->costo_unitario, 2) }}</td>
+                    <td class="p-6 text-gray-400 text-xs">{{ $mp->fecha_vencimiento ? \Carbon\Carbon::parse($mp->fecha_vencimiento)->format('d/m/Y') : '—' }}</td>
+                    <td class="p-6 text-right">
+                        <div class="flex justify-end gap-2 text-gray-500">
+                            <a href="{{ route('materia-prima.movimientos', $mp) }}" class="p-2 hover:text-[#e7c095] transition-colors"><span class="material-symbols-outlined text-lg">history</span></a>
                             @if(auth()->user()->role === 'admin')
-                                <a href="{{ route('materia-prima.edit', $mp) }}" class="text-slate-300 hover:text-white">Editar</a>
-                                <form action="{{ route('materia-prima.destroy', $mp) }}" method="POST" onsubmit="return confirm('¿Eliminar?')" class="inline">
+                                <a href="{{ route('materia-prima.edit', $mp) }}" class="p-2 hover:text-white transition-colors"><span class="material-symbols-outlined text-lg">edit</span></a>
+                                <form action="{{ route('materia-prima.destroy', $mp) }}" method="POST" onsubmit="return confirm('¿Seguro?')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-400 hover:text-red-300">Eliminar</button>
+                                    <button class="p-2 hover:text-red-400 transition-colors"><span class="material-symbols-outlined text-lg">delete</span></button>
                                 </form>
                             @endif
                         </div>
                     </td>
                 </tr>
                 @empty
-                <tr>
-                    <td colspan="7" class="px-6 py-10 text-center text-slate-500">
-                        No hay materias primas registradas.<br>
-                        Usa el botón "Nueva Materia Prima" para agregar.
-                    </td>
-                </tr>
+                <tr><td colspan="6" class="p-10 text-center text-gray-600 italic">No existen registros disponibles.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
-    <!-- Paginación -->
-    <div class="mt-6">
+    <div class="px-4">
         {{ $materias->links() }}
     </div>
 </div>

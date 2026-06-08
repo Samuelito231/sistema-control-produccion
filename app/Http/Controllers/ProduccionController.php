@@ -6,7 +6,7 @@ use App\Models\Producto;
 use App\Models\Merma;
 use App\Models\Produccion;
 use App\Helpers\AuditHelper;
-use App\Helpers\NotificacionHelper;
+use App\Events\StockBajoEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -122,7 +122,7 @@ class ProduccionController extends Controller
             $producto->decrement('stock_actual', $request->cantidad);
             $nuevoStock = $producto->fresh()->stock_actual;
 
-            // Verificar stock bajo después de la merma
+            // Verificar stock bajo después de la merma (usando EVENTO)
             $this->verificarStockBajo($producto);
 
             AuditHelper::log('merma_registrada', $producto, null, null, [
@@ -153,22 +153,22 @@ class ProduccionController extends Controller
     }
 
     // =========================================================================
-    // MÉTODOS PRIVADOS DE NOTIFICACIONES
+    // MÉTODOS PRIVADOS DE NOTIFICACIONES CON EVENTOS
     // =========================================================================
 
     /**
-     * Verificar stock bajo de un producto y generar notificación
+     * Verificar stock bajo de un producto y disparar evento
      */
     private function verificarStockBajo(Producto $producto): void
     {
         if ($producto->stock_actual <= $producto->stock_minimo && $producto->stock_minimo > 0) {
-            NotificacionHelper::stockBajo(
+            event(new StockBajoEvent(
                 $producto,
                 'producto en producción',
                 $producto->nombre,
                 $producto->stock_actual,
                 $producto->stock_minimo
-            );
+            ));
         }
     }
     

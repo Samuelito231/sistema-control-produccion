@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ControlCalidad;
 use App\Models\Produccion;
-use App\Helpers\NotificacionHelper;
+use App\Events\CalidadRechazadaEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -62,13 +62,13 @@ class ControlCalidadController extends Controller
                 'inspector_id' => auth()->id(),
             ]);
             
-            // Si el producto es RECHAZADO, generar notificación
+            // Si el producto es RECHAZADO, disparar evento
             if ($validated['resultado'] === 'rechazado') {
                 $produccion = Produccion::with('producto')->find($validated['produccion_id']);
                 $productoNombre = $produccion->producto->nombre ?? 'Producto desconocido';
                 $motivo = $validated['motivo_rechazo'] ?? 'No especificado';
                 
-                NotificacionHelper::calidadRechazada($inspeccion, $productoNombre, $motivo);
+                event(new CalidadRechazadaEvent($inspeccion, $productoNombre, $motivo));
             }
             
             DB::commit();

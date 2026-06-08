@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\MateriaPrima;
 use App\Models\MovimientoMateriaPrima;
 use App\Helpers\AuditHelper;
-use App\Helpers\NotificacionHelper;
+use App\Events\StockBajoEvent;
+use App\Events\ProductoVencidoEvent;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -279,7 +280,7 @@ class MateriaPrimaController extends Controller
                     $costo
                 );
 
-                // Verificar stock bajo después de la entrada
+                // Verificar stock bajo después de la entrada (usando EVENTO)
                 $this->verificarStockBajo($materia_prima);
 
                 AuditHelper::log('entrada_materia_prima', $materia_prima, null, [
@@ -335,7 +336,7 @@ class MateriaPrimaController extends Controller
                     $validated['observaciones'] ?? null
                 );
 
-                // Verificar stock bajo después de la salida
+                // Verificar stock bajo después de la salida (usando EVENTO)
                 $this->verificarStockBajo($materia_prima);
 
                 AuditHelper::log('salida_materia_prima', $materia_prima, null, [
@@ -380,27 +381,27 @@ class MateriaPrimaController extends Controller
     }
 
     // =========================================================================
-    // MÉTODOS PRIVADOS DE NOTIFICACIONES
+    // MÉTODOS PRIVADOS DE NOTIFICACIONES CON EVENTOS
     // =========================================================================
 
     /**
-     * Verificar stock bajo y generar notificaciones
+     * Verificar stock bajo y disparar evento
      */
     private function verificarStockBajo(MateriaPrima $materia_prima): void
     {
         if ($materia_prima->stock_actual <= $materia_prima->stock_minimo && $materia_prima->stock_minimo > 0) {
-            NotificacionHelper::stockBajo(
+            event(new StockBajoEvent(
                 $materia_prima,
                 'materia prima',
                 $materia_prima->nombre,
                 $materia_prima->stock_actual,
                 $materia_prima->stock_minimo
-            );
+            ));
         }
     }
 
     /**
-     * Verificar productos vencidos y generar notificaciones
+     * Verificar productos vencidos y disparar eventos
      */
     private function verificarProductosVencidos(): void
     {
@@ -412,8 +413,7 @@ class MateriaPrimaController extends Controller
             ->get();
 
         foreach ($vencidos as $producto) {
-            // Verificar si ya se notificó este vencimiento (opcional: usar una tabla de logs)
-            NotificacionHelper::productoVencido($producto);
+            event(new ProductoVencidoEvent($producto));
         }
     }
 }
