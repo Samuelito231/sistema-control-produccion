@@ -143,6 +143,32 @@ Route::middleware(['auth', 'user.status'])->group(function () {
     });
 });
 
+
+use App\Http\Controllers\EnvioController;
+
+// ===========================================
+// DISTRIBUCIÓN / ENVÍOS
+// ===========================================
+Route::middleware(['role:admin,operario'])->prefix('envios')->name('envios.')->group(function () {
+    Route::get('/', [EnvioController::class, 'index'])->name('index');
+    Route::get('/create', [EnvioController::class, 'create'])->name('create');
+    Route::post('/', [EnvioController::class, 'store'])->name('store');
+    Route::get('/historial', [EnvioController::class, 'historial'])->name('historial');
+    Route::get('/{envio}', [EnvioController::class, 'show'])->name('show');
+    Route::patch('/{envio}/estado', [EnvioController::class, 'updateEstado'])->name('update-estado');
+});
+
+
+
+// ===========================================
+// TRAZABILIDAD
+// ===========================================
+Route::middleware(['role:admin,operario,auditor,analista'])->prefix('trazabilidad')->name('trazabilidad.')->group(function () {
+    Route::get('/', [App\Http\Controllers\TrazabilidadController::class, 'index'])->name('index');
+    Route::get('/buscar', [App\Http\Controllers\TrazabilidadController::class, 'buscar'])->name('buscar');
+});
+
+
 // ===========================================
 // 3. REDIRECCIÓN POR DEFECTO
 // ===========================================

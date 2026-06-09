@@ -207,10 +207,12 @@
             <div class="sb-panel" data-panel="distribucion">
                 <div>
                     <div class="pl-9 pt-1 pb-1 space-y-0.5">
-                        <a href="#" class="sb-link disabled">
+                        <a href="{{ route('envios.index') }}"
+                           class="sb-link {{ request()->routeIs('envios.index') || request()->routeIs('envios.create') ? 'active' : '' }}">
                             <span class="material-symbols-outlined text-[15px]">add</span> Registrar Envío
                         </a>
-                        <a href="#" class="sb-link disabled">
+                        <a href="{{ route('envios.historial') }}"
+                           class="sb-link {{ request()->routeIs('envios.historial') ? 'active' : '' }}">
                             <span class="material-symbols-outlined text-[15px]">history</span> Historial de Envíos
                         </a>
                     </div>
@@ -223,7 +225,7 @@
         @if(in_array(Auth::user()->role, ['admin', 'operario', 'auditor', 'analista', 'empaquetador']))
         <div>
             <button type="button"
-                class="sb-trigger {{ request()->routeIs('reportes*') ? 'active' : '' }}"
+                class="sb-trigger {{ request()->routeIs('reportes*') || request()->routeIs('trazabilidad*') ? 'active' : '' }}"
                 data-sb="reportes">
                 <div class="sb-trigger-left">
                     <span class="material-symbols-outlined text-xl text-gray-400">analytics</span>
@@ -238,7 +240,8 @@
                            class="sb-link {{ request()->routeIs('reportes') ? 'active' : '' }}">
                             <span class="material-symbols-outlined text-[15px]">bar_chart</span> Reportes de Merma
                         </a>
-                        <a href="#" class="sb-link disabled">
+                        <a href="{{ route('trazabilidad.index') }}"
+                           class="sb-link {{ request()->routeIs('trazabilidad*') ? 'active' : '' }}">
                             <span class="material-symbols-outlined text-[15px]">timeline</span> Trazabilidad
                         </a>
                     </div>
@@ -353,8 +356,6 @@
         var item   = all[key];
         if (!item.panel) return;
         var isOpen = btn.classList.contains('active') || localStorage.getItem('sb_' + key) === 'true';
-        // Solo abre el activo al cargar; los demás respetan localStorage pero
-        // si hay más de uno guardado como abierto, solo dejamos el activo
         if (btn.classList.contains('active')) {
             setOpen(key, true);
         } else if (isOpen) {
