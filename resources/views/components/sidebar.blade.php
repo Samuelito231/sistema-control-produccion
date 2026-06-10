@@ -101,10 +101,10 @@
     {{-- Nav --}}
     <nav class="flex-1 px-3 py-5 space-y-1">
 
-        {{-- Inventario --}}
+        {{-- INVENTARIO --}}
         <div>
             <button type="button"
-                class="sb-trigger {{ request()->routeIs('materia-prima*') || request()->routeIs('inventario*') ? 'active' : '' }}"
+                class="sb-trigger {{ request()->routeIs('materia-prima*') || request()->routeIs('inventario*') || request()->routeIs('recetas*') ? 'active' : '' }}"
                 data-sb="inventario">
                 <div class="sb-trigger-left">
                     <span class="material-symbols-outlined text-xl text-gray-400">inventory</span>
@@ -120,15 +120,19 @@
                             <span class="material-symbols-outlined text-[15px]">grass</span> Materia Prima
                         </a>
                         <a href="{{ route('inventario') }}"
-                           class="sb-link {{ request()->routeIs('inventario*') && !request()->routeIs('materia-prima*') ? 'active' : '' }}">
+                           class="sb-link {{ request()->routeIs('inventario*') && !request()->routeIs('materia-prima*') && !request()->routeIs('recetas*') ? 'active' : '' }}">
                             <span class="material-symbols-outlined text-[15px]">box</span> Productos Terminados
+                        </a>
+                        <a href="{{ route('recetas.todas') }}"
+                           class="sb-link {{ request()->routeIs('recetas.todas') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">receipt_long</span> Recetas
                         </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Producción --}}
+        {{-- PRODUCCIÓN --}}
         @if(in_array(Auth::user()->role, ['admin', 'operario', 'auditor', 'analista']))
         <div>
             <button type="button"
@@ -167,7 +171,7 @@
         </div>
         @endif
 
-        {{-- Empaquetado --}}
+        {{-- EMPAQUETADO --}}
         @if(in_array(Auth::user()->role, ['admin', 'operario']))
         <div>
             <button type="button"
@@ -192,7 +196,7 @@
         </div>
         @endif
 
-        {{-- Distribución --}}
+        {{-- DISTRIBUCIÓN --}}
         @if(in_array(Auth::user()->role, ['admin', 'operario']))
         <div>
             <button type="button"
@@ -207,9 +211,13 @@
             <div class="sb-panel" data-panel="distribucion">
                 <div>
                     <div class="pl-9 pt-1 pb-1 space-y-0.5">
-                        <a href="{{ route('envios.index') }}"
-                           class="sb-link {{ request()->routeIs('envios.index') || request()->routeIs('envios.create') ? 'active' : '' }}">
+                        <a href="{{ route('envios.create') }}"
+                           class="sb-link {{ request()->routeIs('envios.create') ? 'active' : '' }}">
                             <span class="material-symbols-outlined text-[15px]">add</span> Registrar Envío
+                        </a>
+                        <a href="{{ route('envios.index') }}"
+                           class="sb-link {{ request()->routeIs('envios.index') ? 'active' : '' }}">
+                            <span class="material-symbols-outlined text-[15px]">list</span> Listado de Envíos
                         </a>
                         <a href="{{ route('envios.historial') }}"
                            class="sb-link {{ request()->routeIs('envios.historial') ? 'active' : '' }}">
@@ -221,7 +229,7 @@
         </div>
         @endif
 
-        {{-- Reportes --}}
+        {{-- REPORTES --}}
         @if(in_array(Auth::user()->role, ['admin', 'operario', 'auditor', 'analista', 'empaquetador']))
         <div>
             <button type="button"
@@ -250,7 +258,7 @@
         </div>
         @endif
 
-        {{-- Administración --}}
+        {{-- ADMINISTRACIÓN --}}
         @if(Auth::user()->role === 'admin')
         <div>
             <button type="button"
@@ -303,7 +311,7 @@
 (function () {
     var sidebar = document.getElementById('mainSidebar');
 
-    // ── Restaurar scroll ──────────────────────────────────────────
+    // Restaurar scroll
     var savedScroll = localStorage.getItem('sidebarScroll');
     if (savedScroll && sidebar) sidebar.scrollTop = parseInt(savedScroll, 10);
     if (sidebar) {
@@ -312,11 +320,10 @@
         });
     }
 
-    // ── Toggle panels (accordion) ─────────────────────────────────
+    // Toggle panels (accordion)
     var triggers = document.querySelectorAll('[data-sb]');
-
-    // Construir mapa de todos los paneles para poder cerrarlos
     var all = {};
+
     triggers.forEach(function (btn) {
         var key = btn.dataset.sb;
         all[key] = {
@@ -363,7 +370,7 @@
         }
     });
 
-    // Click: cierra todos los demás, toggle el clickeado
+    // Click
     triggers.forEach(function (btn) {
         var key = btn.dataset.sb;
         var item = all[key];

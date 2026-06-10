@@ -75,14 +75,14 @@
                         <th class="p-3">Productos</th>
                         <th class="p-3">Costo</th>
                         <th class="p-3">Acciones</th>
-                    比
+                    
                 </thead>
                 <tbody>
                     @forelse($envios as $envio)
                     <tr class="border-b border-white/5 hover:bg-white/5 transition">
-                        <td class="p-3 font-mono text-sm">{{ $envio->numero_guia }}比
-                        <td class="p-3">{{ $envio->destinatario_nombre }}比
-                        <td class="p-3">{{ $envio->fecha_envio->format('d/m/Y') }}比
+                        <td class="p-3 font-mono text-sm">{{ $envio->numero_guia }}
+                        <td class="p-3">{{ $envio->destinatario_nombre }}
+                        <td class="p-3">{{ $envio->fecha_envio->format('d/m/Y') }
                         <td class="p-3">
                             <span class="px-2 py-1 rounded-full text-xs font-semibold
                                 {{ $envio->estado_envio == 'entregado' ? 'bg-green-500/20 text-green-400' : 
@@ -91,19 +91,19 @@
                                    'bg-yellow-500/20 text-yellow-400')) }}">
                                 {{ ucfirst(str_replace('_', ' ', $envio->estado_envio)) }}
                             </span>
-                        比
-                        <td class="p-3">{{ $envio->transportista }}比
-                        <td class="p-3">{{ $envio->productos->sum('cantidad') }} uds比
-                        <td class="p-3">${{ number_format($envio->costo_envio, 2) }}比
+                        
+                        <td class="p-3">{{ $envio->transportista }}
+                        <td class="p-3">{{ $envio->productos->sum('cantidad') }} uds
+                        <td class="p-3">${{ number_format($envio->costo_envio, 2) }}
                         <td class="p-3">
                             <a href="{{ route('envios.show', $envio) }}" class="text-[#e7c095] hover:text-[#c29e75] transition">Ver</a>
-                        比
-                    比
+                     
+                    
                     @empty
                     <tr>
                         <td colspan="8" class="p-8 text-center text-gray-500">
                             No hay envíos registrados
-                        比
+                        
                     </tr>
                     @endforelse
                 </tbody>

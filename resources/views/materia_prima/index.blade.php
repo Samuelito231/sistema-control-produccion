@@ -12,7 +12,7 @@
         @if(auth()->user()->role === 'admin')
             <a href="{{ route('materia-prima.create') }}" 
                class="flex items-center gap-2 bg-[#e7c095]/10 border border-[#e7c095]/20 px-6 py-2.5 rounded-xl text-[#e7c095] hover:bg-[#e7c095]/20 transition-all font-bold text-xs uppercase tracking-widest">
-                <span class="material-symbols-outlined text-sm">add</span> Nueva Referencia
+                <span class="material-symbols-outlined text-sm">add</span> NUEVA MATERIA PRIMA
             </a>
         @endif
     </header>

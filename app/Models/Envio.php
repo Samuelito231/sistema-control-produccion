@@ -12,12 +12,27 @@ class Envio extends Model
     protected $table = 'envios';
 
     protected $fillable = [
-        'numero_guia', 'fecha_envio', 'fecha_estimada_entrega', 'fecha_real_entrega',
-        'estado', 'destinatario_nombre', 'destinatario_telefono', 'destinatario_email',
-        'direccion', 'ciudad', 'municipio', 'estado', 'codigo_postal',
-        'transportista', 'numero_guia_transportista', 'costo_envio', 'costo_pagado_por',
-        'observaciones', 'usuario_id', 'autorizado_por'
-    ];
+    'numero_guia',
+    'fecha_envio',
+    'fecha_estimada_entrega',
+    'fecha_real_entrega',
+    'estado_envio',
+    'destinatario_nombre',
+    'destinatario_telefono',
+    'destinatario_email',
+    'direccion',
+    'ciudad',
+    'municipio',
+    'estado_region',
+    'codigo_postal',
+    'transportista',
+    'numero_guia_transportista',
+    'costo_envio',
+    'costo_pagado_por',
+    'observaciones',
+    'usuario_id',
+    'autorizado_por'
+];
 
     protected $casts = [
         'fecha_envio' => 'date',
